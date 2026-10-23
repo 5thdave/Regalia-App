@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Regalia | Luxury Fashion & Brands{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        {% include "components/_header.html" %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages" aria-live="polite">
+                    {% for category, message in messages %}
+                        <p class="flash-message flash-{{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}
+            {% block main %}{% endblock %}
+        {% endblock %}
+
+        {% include "components/_footer.html" %}
+    </div>
+
+    {% block script %}
+    <script>
+        const profileIcon = document.getElementById('profile-icon');
+        const profileDropdown = document.getElementById('profile-dropdown');
+
+        if (profileIcon && profileDropdown) {
+            profileIcon.addEventListener('click', function(e) {
+                e.preventDefault();
+                profileDropdown.style.display = (profileDropdown.style.display === 'none' || profileDropdown.style.display === '') ? 'block' : 'none';
+            });
+
+            document.addEventListener('click', function(e) {
+                const wrapper = document.getElementById('profile-wrapper');
+                if (wrapper && !wrapper.contains(e.target)) {
+                    profileDropdown.style.display = 'none';
+                }
+            });
+        }
+    </script>
+    {% endblock %}
+</body>
+</html>

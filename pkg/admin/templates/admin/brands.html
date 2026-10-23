@@ -1,0 +1,54 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'brands' %}
+
+{% block title %}Brand Management | Regalia Admin{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>Brand Management</h1>
+</div>
+
+<div class="filter-bar">
+    <input type="text" placeholder="Search brand name or email...">
+    <select>
+        <option value="">All Statuses</option>
+        <option>Pending</option>
+        <option>Active</option>
+        <option>Suspended</option>
+    </select>
+</div>
+
+<div class="table-card">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Brand Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Date Registered</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%for brand in brands%}
+            <tr>
+                <td>{{brand.brand_id}}</td>
+                <td>{{brand.brand_name}}</td>
+                <td>{{brand.brand_email}}</td>
+                <td>{{brand.brand_phone}}</td>
+                <td>Oct 10, 2026</td>
+                <td><span class="badge badge-pending">Pending</span></td>
+                <td class="action-links">
+                    <a href="#" class="action-approve">Approve</a>
+                    <a href="#" class="action-reject">Reject</a>
+                    <a href="#" class="action-view">View</a>
+                </td>
+            </tr>
+            {%endfor%}
+            
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'payouts' %}
+
+{% block title %}Payouts | Regalia Admin{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>Payouts</h1>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Pending</h3>
+        <p class="value">$8,340</p>
+    </div>
+    <div class="stat-card">
+        <h3>Processed This Month</h3>
+        <p class="value">$42,100</p>
+    </div>
+    <div class="stat-card">
+        <h3>Platform Commission</h3>
+        <p class="value">$4,210</p>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <input type="text" placeholder="Search by brand or reference...">
+    <select>
+        <option value="">All Statuses</option>
+        <option>Pending</option>
+        <option>Processed</option>
+        <option>Failed</option>
+    </select>
+</div>
+
+<div class="table-card">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Payout ID</th>
+                <th>Brand</th>
+                <th>Order ID</th>
+                <th>Gross</th>
+                <th>Commission</th>
+                <th>Net Payout</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>#PO-001</td>
+                <td>Elysian Attire</td>
+                <td>#ORD-0001</td>
+                <td>$450.00</td>
+                <td>$45.00</td>
+                <td>$405.00</td>
+                <td><span class="badge badge-pending">Pending</span></td>
+                <td class="action-links">
+                    <a href="#" class="action-process">Process</a>
+                    <a href="#" class="action-view">View</a>
+                </td>
+            </tr>
+            <tr>
+                <td>#PO-002</td>
+                <td>Elysian Attire</td>
+                <td>#ORD-0002</td>
+                <td>$1,200.00</td>
+                <td>$120.00</td>
+                <td>$1,080.00</td>
+                <td><span class="badge badge-pending">Pending</span></td>
+                <td class="action-links">
+                    <a href="#" class="action-process">Process</a>
+                    <a href="#" class="action-view">View</a>
+                </td>
+            </tr>
+            <tr>
+                <td>#PO-003</td>
+                <td>Noir Maison</td>
+                <td>#ORD-0005</td>
+                <td>$670.00</td>
+                <td>$67.00</td>
+                <td>$603.00</td>
+                <td><span class="badge badge-processed">Processed</span></td>
+                <td class="action-links">
+                    <a href="#" class="action-view">View</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

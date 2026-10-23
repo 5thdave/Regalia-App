@@ -1,0 +1,749 @@
+{% extends "user/master.html" %}
+
+{% block title %}Regalia | {{ brand.brand_name }} Collection{% endblock %}
+
+{% block content %}
+<main class="main collectionmain">
+    <div class="logobanner overlay"{% if brand_logo_url %} style="--brand-banner-image: url('{{ brand_logo_url }}');"{% endif %}></div>
+
+    <div id="brandcollection">
+        <aside class="aside">
+            <div>
+                <h1>{{ brand.brand_name }}</h1>
+                <br>
+                <p class="dropbtn">
+                    AVAILABILITY
+                    <svg class="arrow" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                        <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </p>
+                <div class="dropdown-content">
+                    <ul>
+                        <li>
+                            <input type="checkbox" class="avail" name="availability" value="Available">
+                            <label for="avail-instock">In-Stock</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" class="avail" name="availability" value="Out of Stock">
+                            <label for="avail-soldout">Sold-Out</label>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div>
+                <p class="dropbtn">
+                    PRICE
+                    <svg class="arrow" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                        <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </p>
+                <div class="dropdown-content">
+                    <ul>
+                        <li>
+                            <input type="checkbox" id="price-under-500" name="price" value="under-500">
+                            <label for="price-under-500">Under $500</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="price-500-1000" name="price" value="500-1000">
+                            <label for="price-500-1000">$500 – $1,000</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="price-over-1000" name="price" value="over-1000">
+                            <label for="price-over-1000">Over $1,000</label>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div>
+                <p class="dropbtn">
+                    SIZE
+                    <svg class="arrow" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                        <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </p>
+                <div class="dropdown-content">
+                    <ul>
+                        <li>
+                            <input type="checkbox" id="size-s" name="size" value="s">
+                            <label for="size-s">Small (S)</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="size-m" name="size" value="m">
+                            <label for="size-m">Medium (M)</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="size-l" name="size" value="l">
+                            <label for="size-l">Large (L)</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="size-xl" name="size" value="xl">
+                            <label for="size-xl">Extra Large (XL)</label>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div>
+                <p class="dropbtn">
+                    FILTER BY
+                    <svg class="arrow" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                        <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </p>
+                <div class="dropdown-content">
+                    <ul>
+                        <li>
+                            <input type="checkbox" id="cat-apparel" name="category" value="apparel">
+                            <label for="cat-apparel">Apparel</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="cat-outerwear" name="category" value="outerwear">
+                            <label for="cat-outerwear">Outerwear</label>
+                        </li>
+                        <li>
+                            <input type="checkbox" id="cat-accessories" name="category" value="accessories">
+                            <label for="cat-accessories">Accessories</label>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <div id="collectiondisplay">
+            <div id="displayheader">
+                <span class="display-title">All Products</span>
+                <span class="product-count" id="product-count">{{ products|length }} Product{{ 's' if products|length != 1 else '' }}</span>
+            </div>
+            <p id="filter-feedback" role="status" aria-live="polite"></p>
+            <div id="displaysection">
+                {% for p in products %}
+                <article class="product-card">
+                    <button class="product-card-open" type="button"
+                            data-product-id="{{ p.product_id }}"
+                            aria-label="View {{ p.product_name }} details">
+                        <div class="product-img-wrap">
+                            {% set cover = p.images|first %}
+                            {% if cover %}
+                            <img src="{{ url_for('static', filename='media/' ~ cover.image) }}"
+                                 alt="{{ p.product_name }}">
+                            {% endif %}
+                            {% if p.status != "Available" %}
+                            <span class="soldout-badge">{{ p.status or 'Unavailable' }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="product-info">
+                            <span class="product-brand">{{ brand.brand_name }}</span>
+                            <h4 class="product-title">{{ p.product_name }}</h4>
+                        </div>
+                    </button>
+                    <div class="product-price-actions">
+                        <span class="product-price">
+                            ${{ '%.2f'|format(p.price) if p.price is not none else 'Price unavailable' }}
+                        </span>
+                        <button class="addtoCartBtn" type="button" data-cart-action="add"
+                                data-product-id="{{ p.product_id }}">
+                            Add to cart
+                        </button>
+                    </div>
+                </article>
+                {% else %}
+                <p>No products found for this brand</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details Modal -->
+    <dialog class="product-modal" id="product-modal" aria-labelledby="modal-product-name">
+        <button class="product-modal-close" id="product-modal-close" type="button"
+                aria-label="Close product details">&times;</button>
+        <div class="product-modal-layout">
+            <div>
+                <div class="product-modal-image-wrap">
+                    <img id="modal-product-image" alt="">
+                </div>
+                <div class="product-modal-thumbnails" id="modal-product-thumbnails"></div>
+            </div>
+            <div class="product-modal-details">
+                <p class="product-brand">{{ brand.brand_name }}</p>
+                <h2 id="modal-product-name"></h2>
+                <p id="modal-product-description"></p>
+                <p class="product-modal-status" id="modal-product-status"></p>
+                <p class="product-modal-price" id="modal-product-price"></p>
+                <section class="product-variant-details" aria-live="polite">
+                    <h3 id="modal-selected-color">Hover a product image to see its color variants</h3>
+                    <div id="modal-variant-list"></div>
+                    <div class="product-modal-actions">
+                        <button class="addtoCartBtn" type="button" data-cart-action="add"
+                                id="modal-add-to-cart" disabled>
+                            Add to cart
+                        </button>
+                    </div>
+                    <p id="purchase-feedback" aria-live="polite"></p>
+                </section>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Shopping Cart Dialog -->
+    <dialog class="cart-dialog" id="cart-dialog" aria-labelledby="cart-dialog-title">
+        <button class="product-modal-close" id="cart-dialog-close" type="button"
+                aria-label="Close shopping cart">&times;</button>
+        <h2 id="cart-dialog-title">Your cart</h2>
+        <p id="cart-empty">Your cart is empty.</p>
+        <div id="cart-items"></div>
+        <div class="cart-dialog-summary">
+            <span id="cart-item-count">0 items</span>
+            <strong id="cart-total">$0.00</strong>
+        </div>
+        <div class="cart-dialog-actions">
+            <button class="addtoCartBtn" id="continue-shopping" type="button">Continue shopping</button>
+            <form id="checkout-form" action="{{ url_for('user.pay_initialize') }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div id="checkout-items"></div>
+                <button class="addtoCartBtn" id="buy-now" type="submit">Buy now</button>
+            </form>
+        </div>
+    </dialog>
+    <p id="cart-feedback" class="cart-feedback" aria-live="polite"></p>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+    const filterInputs = document.querySelectorAll(
+        '.aside input[type="checkbox"][name]'
+    );
+    const displaySection = document.getElementById("displaysection");
+    const productCount = document.getElementById("product-count");
+    const filterFeedback = document.getElementById("filter-feedback");
+    const allProductCards = Array.from(
+        displaySection.querySelectorAll(".product-card")
+    );
+    const filterEndpoints = {
+        availability: {{ url_for('main.filter_collection_availability', brand_id=brand.brand_id)|tojson }},
+        price: {{ url_for('main.filter_collection_price', brand_id=brand.brand_id)|tojson }},
+        size: {{ url_for('main.filter_collection_size', brand_id=brand.brand_id)|tojson }},
+        category: {{ url_for('main.filter_collection_category', brand_id=brand.brand_id)|tojson }},
+    };
+    let activeFilterRequest = 0;
+
+    async function filterProducts(changedFilter) {
+        const endpoint = filterEndpoints[changedFilter.name];
+        if (!endpoint) return;
+
+        const requestId = ++activeFilterRequest;
+        const query = new URLSearchParams();
+        filterInputs.forEach((filter) => {
+            if (filter.checked) query.append(filter.name, filter.value);
+        });
+        filterFeedback.textContent = "Updating products...";
+
+        try {
+            const response = await fetch(`${endpoint}?${query.toString()}`, {
+                headers: { "Accept": "application/json" }
+            });
+            if (!response.ok) {
+                throw new Error(`Filter request failed (${response.status}).`);
+            }
+            const data = await response.json();
+            if (!Array.isArray(data.product_ids)) {
+                throw new TypeError("Filter response did not contain product IDs.");
+            }
+            if (requestId !== activeFilterRequest) return;
+
+            const matchingIds = new Set(data.product_ids.map(String));
+            const matchingCards = allProductCards
+                .filter((card) => {
+                    const productButton = card.querySelector(".product-card-open");
+                    return matchingIds.has(productButton.dataset.productId);
+                })
+                .map((card) => card.cloneNode(true));
+
+            displaySection.replaceChildren(...matchingCards);
+            const visibleCount = matchingCards.length;
+
+            productCount.textContent =
+                `${visibleCount} Product${visibleCount === 1 ? "" : "s"}`;
+
+            if (visibleCount === 0) {
+                const emptyMessage = document.createElement("p");
+                emptyMessage.className = "filter-empty-state";
+                emptyMessage.textContent = "No products match these filters.";
+                displaySection.append(emptyMessage);
+            }
+
+            filterFeedback.textContent = "";
+        } catch (error) {
+            if (requestId !== activeFilterRequest) return;
+            console.error("Unable to filter collection products.", error);
+            filterFeedback.textContent =
+                "Could not update products. Please try again.";
+        }
+    }
+
+    filterInputs.forEach((filter) => {
+        filter.addEventListener("change", () => filterProducts(filter));
+    });
+    
+
+    const dropBtns = document.querySelectorAll(".dropbtn");
+    dropBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const parentDiv = btn.parentElement;
+            const dropdown = parentDiv.querySelector(".dropdown-content");
+            const arrow = btn.querySelector(".arrow");
+
+            if (dropdown) {
+                dropdown.classList.toggle("dropdown-content-toggle");
+            }
+            if (arrow) {
+                arrow.classList.toggle("arrow-rotate");
+            }
+        });
+    });
+    const productDetails = {{ product_details|tojson }};
+    const cartStorageKey = "regalia-cart";
+    const checkoutCompleted =
+        new URLSearchParams(window.location.search).get("checkout") === "success";
+    let carts = loadCart();
+    if (checkoutCompleted) {
+        carts = [];
+        try {
+            localStorage.removeItem(cartStorageKey);
+        } catch (error) {
+            console.error("Unable to clear the cart after checkout.", error);
+            document.getElementById("cart-feedback").textContent =
+                "Your order was paid, but the saved cart could not be cleared.";
+        }
+        const pageUrl = new URL(window.location.href);
+        pageUrl.searchParams.delete("checkout");
+        window.history.replaceState({}, document.title, pageUrl);
+    }
+    const productModal = document.getElementById("product-modal");
+    const cartDialog = document.getElementById("cart-dialog");
+    const cartItemsContainer = document.getElementById("cart-items");
+    const checkoutForm = document.getElementById("checkout-form");
+    const checkoutItems = document.getElementById("checkout-items");
+    const cartCount = document.querySelector(".cartcount");
+    const modalImage = document.getElementById("modal-product-image");
+    const modalThumbnails = document.getElementById("modal-product-thumbnails");
+    const modalVariantList = document.getElementById("modal-variant-list");
+    let selectedProduct = null;
+    let selectedImage = null;
+    let selectedVariant = null;
+
+    function loadCart() {
+        try {
+            const savedCart = localStorage.getItem(cartStorageKey);
+            if (!savedCart) return [];
+
+            const parsedCart = JSON.parse(savedCart);
+            if (
+                !Array.isArray(parsedCart) ||
+                parsedCart.some((item) =>
+                    !item ||
+                    typeof item !== "object" ||
+                    item.variantId === undefined ||
+                    !Number.isInteger(item.qty) ||
+                    item.qty < 1 ||
+                    !Number.isFinite(item.price)
+                )
+            ) {
+                throw new TypeError("Saved cart has an invalid format.");
+            }
+            return parsedCart;
+        } catch (error) {
+            console.error("Unable to load the saved cart.", error);
+            document.getElementById("cart-feedback").textContent =
+                "Your saved cart could not be loaded. Add your items again.";
+            return [];
+        }
+    }
+
+    function saveCart() {
+        try {
+            localStorage.setItem(cartStorageKey, JSON.stringify(carts));
+            return true;
+        } catch (error) {
+            console.error("Unable to save the cart.", error);
+            document.getElementById("cart-feedback").textContent =
+                "Your cart could not be saved in this browser.";
+            return false;
+        }
+    }
+
+    function formatPrice(price) {
+        return price === null ? "Price unavailable" :
+            new Intl.NumberFormat(undefined, {
+                style: "currency",
+                currency: "USD"
+            }).format(price);
+    }
+
+    function showImageVariants(image) {
+        const heading = document.getElementById("modal-selected-color");
+        const addButton = document.getElementById("modal-add-to-cart");
+        selectedVariant = null;
+        addButton.disabled = true;
+        modalVariantList.replaceChildren();
+
+        const imageHasColor = image.color_id !== null && image.color_id !== undefined;
+        const colorVariants = imageHasColor
+            ? selectedProduct.variants.filter(
+                (variant) => String(variant.color_id) === String(image.color_id)
+            )
+            : selectedProduct.variants;
+
+        heading.textContent = imageHasColor
+            ? `${image.color_name || "Color"} variants`
+            : "Image color not assigned — showing all color variants";
+
+        if (colorVariants.length === 0) {
+            document.getElementById("modal-product-price").textContent =
+                formatPrice(selectedProduct.price);
+            modalVariantList.textContent = "No variants are available for this color.";
+            return;
+        }
+
+        const prices = colorVariants
+            .map((variant) => variant.price)
+            .filter((price) => price !== null && Number.isFinite(price));
+        const lowestPrice = prices.length ? Math.min(...prices) : null;
+        const highestPrice = prices.length ? Math.max(...prices) : null;
+        document.getElementById("modal-product-price").textContent =
+            lowestPrice === null
+                ? formatPrice(selectedProduct.price)
+                : lowestPrice === highestPrice
+                    ? formatPrice(lowestPrice)
+                    : `${formatPrice(lowestPrice)} – ${formatPrice(highestPrice)}`;
+
+        const table = document.createElement("table");
+        table.className = "product-variant-table";
+        table.innerHTML = `
+            <thead><tr><th>Select</th>${imageHasColor ? "" : "<th>Color</th>"}<th>Size</th><th>Price</th><th>In stock</th></tr></thead>
+            <tbody></tbody>
+        `;
+        const tbody = table.querySelector("tbody");
+
+        colorVariants.forEach((variant) => {
+            const row = document.createElement("tr");
+            const selectCell = document.createElement("td");
+            const selectVariant = document.createElement("input");
+            selectVariant.type = "radio";
+            selectVariant.name = "selected-product-variant";
+            selectVariant.value = String(variant.id);
+            selectVariant.disabled = variant.stock <= 0 || selectedProduct.status !== "Available";
+            selectVariant.setAttribute(
+                "aria-label",
+                `Select ${variant.color_name}, ${variant.size_code} variant`
+            );
+            selectCell.append(selectVariant);
+            row.append(selectCell);
+            if (!imageHasColor) {
+                const color = document.createElement("td");
+                color.textContent = variant.color_name;
+                row.append(color);
+            }
+            const size = document.createElement("td");
+            size.textContent = variant.size_name ?
+                `${variant.size_code} (${variant.size_name})` : variant.size_code;
+            const price = document.createElement("td");
+            price.textContent = formatPrice(variant.price);
+            const stock = document.createElement("td");
+            stock.textContent = String(variant.stock);
+            row.append(size, price, stock);
+            selectVariant.addEventListener("change", () => {
+                selectedVariant = variant;
+                addButton.disabled = false;
+                document.getElementById("modal-product-price").textContent =
+                    formatPrice(variant.price);
+                modalVariantList.querySelectorAll("tr").forEach((item) => {
+                    item.classList.toggle("is-selected", item === row);
+                });
+            });
+            tbody.append(row);
+        });
+
+        modalVariantList.append(table);
+    }
+
+    function openProductModal(product) {
+        selectedProduct = product;
+        selectedVariant = null;
+        document.getElementById("purchase-feedback").textContent = "";
+        document.getElementById("modal-product-name").textContent = product.name;
+        document.getElementById("modal-product-description").textContent =
+            product.description || "No description provided.";
+        document.getElementById("modal-product-status").textContent =
+            product.status || "Status unavailable";
+        document.getElementById("modal-product-price").textContent =
+            `From ${formatPrice(product.price)}`;
+
+        modalThumbnails.replaceChildren();
+        const images = product.images;
+        selectedImage = images[0] || null;
+        modalImage.src = selectedImage ? selectedImage.url : "";
+        modalImage.alt = product.name;
+        modalImage.hidden = !selectedImage;
+        if (selectedImage) {
+            showImageVariants(selectedImage);
+        } else {
+            showImageVariants({ color_id: null });
+            document.getElementById("modal-selected-color").textContent =
+                "No product images";
+        }
+
+        images.forEach((imageData, index) => {
+            const thumbnail = document.createElement("button");
+            thumbnail.type = "button";
+            thumbnail.className = "product-modal-thumbnail";
+            if (index === 0) thumbnail.classList.add("is-active");
+            thumbnail.setAttribute(
+                "aria-label",
+                `View ${imageData.color_name || "unassigned color"} image ${index + 1}`
+            );
+            const image = document.createElement("img");
+            image.src = imageData.url;
+            image.alt = "";
+            thumbnail.append(image);
+            const selectImage = () => {
+                selectedImage = imageData;
+                modalImage.src = imageData.url;
+                showImageVariants(imageData);
+                modalThumbnails.querySelectorAll(".product-modal-thumbnail")
+                    .forEach((item) => item.classList.toggle("is-active", item === thumbnail));
+            };
+            thumbnail.addEventListener("mouseenter", selectImage);
+            thumbnail.addEventListener("focus", selectImage);
+            thumbnail.addEventListener("click", selectImage);
+            modalThumbnails.append(thumbnail);
+        });
+
+        productModal.showModal();
+    }
+
+    function renderCart() {
+        const totalItems = carts.reduce((sum, item) => sum + item.qty, 0);
+        const total = carts.reduce((sum, item) => sum + item.price * item.qty, 0);
+        const emptyMessage = document.getElementById("cart-empty");
+
+        cartItemsContainer.replaceChildren();
+        emptyMessage.hidden = carts.length > 0;
+        cartCount.textContent = String(totalItems);
+        cartCount.setAttribute("aria-label", `${totalItems} items in cart`);
+        document.getElementById("cart-item-count").textContent =
+            `${totalItems} item${totalItems === 1 ? "" : "s"}`;
+        document.getElementById("cart-total").textContent = formatPrice(total);
+
+        carts.forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "cart-item";
+
+            const description = document.createElement("div");
+            if (item.coverUrl) {
+                const cover = document.createElement("img");
+                cover.className = "cart-item-cover";
+                cover.src = item.coverUrl;
+                cover.alt = "";
+                description.append(cover);
+            }
+            const name = document.createElement("strong");
+            name.textContent = item.name;
+            const brand = document.createElement("p");
+            brand.textContent = item.brandName;
+            const price = document.createElement("p");
+            price.textContent = formatPrice(item.price);
+            const variantDetails = document.createElement("p");
+            variantDetails.textContent =
+                `${item.colorName} · ${item.sizeCode}${item.sizeName ? ` (${item.sizeName})` : ""}`;
+            description.append(brand, name, variantDetails, price);
+
+            const quantity = document.createElement("div");
+            quantity.className = "cart-item-quantity";
+            const decrease = document.createElement("button");
+            decrease.type = "button";
+            decrease.dataset.cartAction = "decrease";
+            decrease.dataset.variantId = String(item.variantId);
+            decrease.setAttribute("aria-label", `Remove one ${item.name} from cart`);
+            decrease.textContent = "−";
+            const count = document.createElement("span");
+            count.textContent = String(item.qty);
+            const increase = document.createElement("button");
+            increase.type = "button";
+            increase.dataset.cartAction = "increase";
+            increase.dataset.variantId = String(item.variantId);
+            increase.setAttribute("aria-label", `Add one ${item.name} to cart`);
+            increase.textContent = "+";
+            quantity.append(decrease, count, increase);
+
+            const lineTotal = document.createElement("strong");
+            lineTotal.textContent = formatPrice(item.price * item.qty);
+            row.append(description, quantity, lineTotal);
+            cartItemsContainer.append(row);
+        });
+    }
+
+    renderCart();
+
+    window.addEventListener("storage", (event) => {
+        if (event.key !== cartStorageKey) return;
+        carts = loadCart();
+        renderCart();
+    });
+
+    modalImage.addEventListener("mouseenter", () => {
+        if (selectedImage) showImageVariants(selectedImage);
+    });
+
+    document.getElementById("displaysection").addEventListener("click", (event) => {
+        const addButton = event.target.closest('[data-cart-action="add"]');
+        if (addButton) {
+            const product = productDetails.find(
+                (item) => String(item.id) === addButton.dataset.productId
+            );
+            if (product) addCoverVariantToCart(product);
+            return;
+        }
+
+        const button = event.target.closest(".product-card-open");
+        if (!button) return;
+        const product = productDetails.find(
+            (item) => String(item.id) === button.dataset.productId
+        );
+        if (product) openProductModal(product);
+    });
+
+    document.getElementById("modal-add-to-cart").addEventListener("click", () => {
+        if (selectedProduct && selectedVariant) {
+            addToCart(selectedProduct, selectedVariant, selectedImage?.url);
+        }
+    });
+
+    function addCoverVariantToCart(product) {
+        const cover = product.images[0] || null;
+        const coverVariants = cover?.color_id !== null && cover?.color_id !== undefined
+            ? product.variants.filter(
+                (variant) => String(variant.color_id) === String(cover.color_id)
+            )
+            : product.variants;
+        const variant = coverVariants.find(
+            (item) => item.stock > 0 && Number.isFinite(item.price)
+        );
+        if (!variant) {
+            document.getElementById("cart-feedback").textContent =
+                `No available variant matches the cover image for ${product.name}.`;
+            return;
+        }
+        addToCart(product, variant, cover?.url);
+    }
+
+    function addToCart(product, variant, coverUrl = null) {
+        const feedback = document.getElementById("cart-feedback");
+        if (product.status !== "Available" || variant.stock <= 0 || !Number.isFinite(variant.price)) {
+            feedback.textContent = `${product.name} in this variant is not currently available.`;
+            return;
+        }
+
+        const existingItem = carts.find(
+            (item) => String(item.variantId) === String(variant.id)
+        );
+        if (existingItem) {
+            if (existingItem.qty >= variant.stock) {
+                feedback.textContent = `Only ${variant.stock} of this variant are in stock.`;
+                return;
+            }
+            existingItem.qty += 1;
+        } else {
+            carts.push({
+                id: product.id,
+                variantId: variant.id,
+                name: product.name,
+                brandName: product.brandName,
+                price: variant.price,
+                colorName: variant.color_name,
+                sizeCode: variant.size_code,
+                sizeName: variant.size_name,
+                coverUrl,
+                stock: variant.stock,
+                qty: 1,
+            });
+        }
+        const cartSaved = saveCart();
+        renderCart();
+        if (!cartSaved) return;
+        feedback.textContent =
+            `${product.name} (${variant.color_name}, ${variant.size_code}) added to your cart.`;
+    }
+
+    cartItemsContainer.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-cart-action]");
+        if (!button) return;
+
+        const item = carts.find(
+            (cartItem) => String(cartItem.variantId) === button.dataset.variantId
+        );
+        if (!item) return;
+
+        if (button.dataset.cartAction === "increase") {
+            if (item.qty >= item.stock) return;
+            item.qty += 1;
+        } else if (button.dataset.cartAction === "decrease") {
+            item.qty -= 1;
+            if (item.qty === 0) {
+                carts.splice(carts.indexOf(item), 1);
+            }
+        }
+        saveCart();
+        renderCart();
+    });
+
+    const cartToggle = document.getElementById("cart-toggle");
+    if (cartToggle) {
+        cartToggle.addEventListener("click", () => {
+            cartDialog.showModal();
+        });
+    }
+
+    checkoutForm.addEventListener("submit", (event) => {
+        if (carts.length === 0) {
+            event.preventDefault();
+            document.getElementById("cart-feedback").textContent =
+                "Add at least one variant to your cart before checkout.";
+            return;
+        }
+
+        checkoutItems.replaceChildren();
+        carts.forEach((item) => {
+            const variantInput = document.createElement("input");
+            variantInput.type = "hidden";
+            variantInput.name = "variant_id";
+            variantInput.value = String(item.variantId);
+            const quantityInput = document.createElement("input");
+            quantityInput.type = "hidden";
+            quantityInput.name = "quantity";
+            quantityInput.value = String(item.qty);
+            checkoutItems.append(variantInput, quantityInput);
+        });
+    });
+
+    document.getElementById("cart-dialog-close").addEventListener("click", () => {
+        cartDialog.close();
+    });
+    cartDialog.addEventListener("click", (event) => {
+        if (event.target === cartDialog) cartDialog.close();
+    });
+    document.getElementById("continue-shopping").addEventListener("click", () => {
+        cartDialog.close();
+    });
+    document.getElementById("product-modal-close").addEventListener("click", () => {
+        productModal.close();
+    });
+
+    productModal.addEventListener("click", (event) => {
+        if (event.target === productModal) productModal.close();
+    });
+</script>
+{% endblock %}

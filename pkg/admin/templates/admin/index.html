@@ -1,0 +1,60 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'overview' %}
+
+{% block title %}Admin Dashboard | Regalia{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>Dashboard Overview</h1>
+</div>
+
+<!-- KPI Metrics -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Revenue</h3>
+        <p class="value"></p>
+    </div>
+    <div class="stat-card">
+        <h3>Platform Profit</h3>
+        <p class="value"></p>
+    </div>
+    <div class="stat-card">
+        <h3>Active Brands</h3>
+        <p class="value"></p>
+    </div>
+    <div class="stat-card">
+        <h3>Pending Payouts</h3>
+        <p class="value"></p>
+    </div>
+</div>
+
+<!-- Pending Brand Approvals -->
+<div class="table-card">
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:1rem; font-weight:600; color:#111827;">Pending Brand Approvals</h3>
+        <a href="#" class="action-view" style="font-size:0.875rem; font-weight:500;">View All</a>
+    </div>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Brand Name</th>
+                <th>Email</th>
+                <th>Date Registered</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%for brand in brands%}
+            <tr>
+                <td>{{brand.brand_name}}</td>
+                <td>{{brand.brand_email}}</td>
+                <td>Oct 10, 2026</td>
+                <td><span class="badge badge-pending">Pending</span></td>
+                <td class="action-links"><a href="#" class="action-view">Review</a></td>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "main/master.html" %}
+        {% block title %}
+        Regalia | Signup
+        {% endblock %}
+        {% block content %}
+        <main class="main signupmain">
+            <div class="signup-card">
+                <h2>Join Regalia</h2>
+                <form id="signupForm" action="" method="post" class="signup-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">   
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" placeholder="Username" autocomplete="username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="Email" autocomplete="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="text" id="phone" name="phone" placeholder="00 000 00000" minlength="8" autocomplete="phone2numeric" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Date of Birth</label>
+                        <input type="date" id="dob" name="dob" placeholder="mm/dd/yyyy" minlength="8" autocomplete="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea  id="address" name="address" placeholder="Address" rows = "4"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select name="gender" id="gender">
+                            <option value="">select your gender</option>
+                            <option value="">male</option>
+                            <option value="">female</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Password" minlength="8" autocomplete="new-password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Confirm password</label>
+                        <input type="password" id="confirmpassword" name="confirmpassword" placeholder="Confirm password" minlength="8" autocomplete="new-password" required>
+                    </div>
+
+                    <button type="submit" class="signup-btn">Sign Up</button>
+                </form>
+                <p class="switch">Already a member? <span><a href="login.html">login</a></span></p>
+            </div>
+        </main>
+        {% endblock %}
+     

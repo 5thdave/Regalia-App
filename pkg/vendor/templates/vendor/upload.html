@@ -1,0 +1,697 @@
+{% extends "vendor/master.html" %}
+
+{% block title %}Upload Product | Regalia{% endblock %}
+
+{% block main %}
+<style>
+    .upload-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        background: #f5f5f5;
+    }
+
+    /* Page header banner */
+    .upload-banner {
+        width: 100%;
+        background: #111212;
+        padding: 26px 40px 22px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .upload-banner-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--lilac-ash);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: color 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .upload-banner-back:hover { color: var(--white); }
+
+    .upload-banner-text h1 {
+        color: var(--white);
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        margin: 0 0 3px;
+    }
+
+    .upload-banner-text p {
+        color: var(--lilac-ash);
+        font-size: 0.87rem;
+        margin: 0;
+    }
+
+    /* Main form area */
+    .upload-body {
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 32px 40px 70px;
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 24px;
+        align-items: start;
+    }
+
+    /* ── Card shell ──────────────────────────────────────── */
+    .upload-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.07);
+        border-radius: 18px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+
+    .upload-card-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid rgba(0,0,0,0.07);
+        background: #fafafa;
+    }
+
+    .upload-card-header h2 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--onyx);
+        margin: 0 0 2px;
+    }
+
+    .upload-card-header p {
+        font-size: 0.8rem;
+        color: var(--dim-gray);
+        margin: 0;
+    }
+
+    .upload-card-body {
+        padding: 22px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    /* ── Form fields ─────────────────────────────────────── */
+    .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .field-group label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--graphite);
+        letter-spacing: 0.3px;
+    }
+
+    .field-group input[type="text"],
+    .field-group input[type="number"],
+    .field-group textarea,
+    .field-group select {
+        width: 100%;
+        height: 42px;
+        border-radius: 10px;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        background: var(--white);
+        padding: 0 14px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        color: var(--onyx);
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .field-group textarea {
+        height: auto;
+        padding: 12px 14px;
+        resize: vertical;
+        line-height: 1.5;
+    }
+
+    .field-group input:focus,
+    .field-group textarea:focus,
+    .field-group select:focus {
+        border-color: var(--onyx);
+        box-shadow: 0 0 0 3px rgba(15,15,15,0.07);
+    }
+
+    .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    /* ── Image dropzone ──────────────────────────────────── */
+    .dropzone-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 180px;
+        border: 2px dashed rgba(0,0,0,0.16);
+        border-radius: 14px;
+        background: #fafafa;
+        cursor: pointer;
+        text-align: center;
+        padding: 28px 20px;
+        transition: border-color 0.25s ease, background 0.25s ease;
+    }
+
+    .dropzone-label:hover,
+    .dropzone-label.drag-over {
+        border-color: var(--onyx);
+        background: rgba(15,15,15,0.03);
+    }
+
+    .dropzone-label svg {
+        color: var(--lilac-ash);
+    }
+
+    .dropzone-label strong {
+        font-size: 0.9rem;
+        color: var(--onyx);
+        font-weight: 700;
+    }
+
+    .dropzone-label small {
+        font-size: 0.78rem;
+        color: var(--dim-gray);
+    }
+
+    .dropzone-label input[type="file"] {
+        display: none;
+    }
+
+    /* Preview grid */
+    .image-preview-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 4px;
+    }
+
+    .image-preview-item {
+        width: 140px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .preview-thumb {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .image-preview-item label {
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .image-preview-item select {
+        width: 100%;
+        min-height: 36px;
+        border: 1px solid rgba(0,0,0,0.15);
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: white;
+        font: inherit;
+    }
+
+    /* ── Variants section ────────────────────────────────── */
+    .variants-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .variant-row {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 90px 80px 36px;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .variant-row input,
+    .variant-row select {
+        height: 38px;
+        border-radius: 9px;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        padding: 0 10px;
+        font-size: 0.85rem;
+        font-family: inherit;
+        color: var(--onyx);
+        background: var(--white);
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+
+    .variant-row input:focus,
+    .variant-row select:focus { border-color: var(--onyx); }
+
+    .btn-remove-variant {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        border: 1.5px solid rgba(220,53,69,0.25);
+        background: rgba(220,53,69,0.06);
+        color: #dc3545;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .btn-remove-variant:hover {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+    }
+
+    .btn-add-variant {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 22px;
+        border: 1.5px solid rgba(0,0,0,0.14);
+        background: transparent;
+        color: var(--graphite);
+        font-size: 0.83rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 4px;
+        width: fit-content;
+    }
+
+    .btn-add-variant:hover {
+        background: var(--onyx);
+        color: var(--white);
+        border-color: var(--onyx);
+    }
+
+    /* ── Right sidebar cards ─────────────────────────────── */
+    .upload-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Availability select inside card */
+    .availability-select {
+        width: 100%;
+        height: 42px;
+        border-radius: 10px;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        background: var(--white);
+        padding: 0 14px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        color: var(--onyx);
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+
+    .availability-select:focus { border-color: var(--onyx); }
+
+    /* Action buttons */
+    .btn-submit {
+        width: 100%;
+        height: 46px;
+        background: #111212;
+        color: var(--white);
+        border: none;
+        border-radius: 23px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        margin-top: 4px;
+    }
+
+    .btn-submit:hover {
+        background: var(--graphite);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    }
+
+    .btn-submit:active { transform: translateY(0); }
+
+    .btn-cancel {
+        width: 100%;
+        height: 42px;
+        background: transparent;
+        color: var(--dim-gray);
+        border: 1.5px solid rgba(0,0,0,0.12);
+        border-radius: 23px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .btn-cancel:hover {
+        border-color: var(--graphite);
+        color: var(--graphite);
+    }
+
+    /* Tip block */
+    .tip-block {
+        background: rgba(188,171,174,0.12);
+        border: 1px solid rgba(188,171,174,0.3);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 0.8rem;
+        color: var(--graphite);
+        line-height: 1.55;
+    }
+
+    .tip-block strong {
+        font-weight: 700;
+        color: var(--onyx);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .upload-body {
+            grid-template-columns: 1fr;
+            padding: 20px 20px 50px;
+        }
+
+        .upload-banner { padding: 20px; }
+        .upload-sidebar { order: -1; }
+        .field-row { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="upload-wrap">
+
+    <div class="upload-banner">
+        <a href="{{url_for('vendor.vendor_dash')}}" class="upload-banner-back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Dashboard
+        </a>
+        <div class="upload-banner-text">
+            <h1>Upload Product</h1>
+            <p>Add a new product to your catalog. Fill in details, upload photos, and add variants.</p>
+        </div>
+    </div>
+
+    
+    <form method="POST" action="" enctype="multipart/form-data" class="upload-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Left column: main form cards -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+
+           
+            <div class="upload-card">
+                <div class="upload-card-header">
+                    <h2>Product Details</h2>
+                    <p>What shoppers see first on the product page.</p>
+                </div>
+                <div class="upload-card-body">
+
+                    <div class="field-group">
+                        <label for="product_name">Product Name</label>
+                        <input type="text" id="product_name" name="product_name"
+                               placeholder="e.g. Classic Leather Oxford" required>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label for="category">Category</label>
+                            <select id="category" name="category" required>
+                                <option value="" disabled selected>Select a category</option>
+                                {% for cat in category %}
+                                <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label for="base_price">Base Price (&#x24;)</label>
+                            <input type="number" id="base_price" name="base_price"
+                                   placeholder="0.00" min="0" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="5"
+                                  placeholder="Describe the product — materials, style, fit…"></textarea>
+                    </div>
+
+                </div>
+            </div>
+
+            
+            <div class="upload-card">
+                <div class="upload-card-header">
+                    <h2>Product Images</h2>
+                    <p>Choose the color shown in each photo. The first photo becomes the cover.</p>
+                </div>
+                <div class="upload-card-body">
+                    <label class="dropzone-label" id="dropzone" for="product_images">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 16 12 12 8 16"></polyline>
+                            <line x1="12" y1="12" x2="12" y2="21"></line>
+                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                        </svg>
+                        <strong>Drop photos here or click to browse</strong>
+                        <small>You can add several at once</small>
+                        <input type="file" id="product_images" name="product_images"
+                               accept="image/png,image/jpeg,image/webp" multiple>
+                    </label>
+
+                    <div class="image-preview-grid" id="preview-grid" aria-live="polite"></div>
+                </div>
+            </div>
+
+            
+            <div class="upload-card">
+                <div class="upload-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h2>Product Variants</h2>
+                        <p>Add each color and size combination with stock and optional custom pricing.</p>
+                    </div>
+                </div>
+                <div class="upload-card-body">
+
+                    <!-- Column headers -->
+                    <div style="display:grid; grid-template-columns: 1.2fr 1fr 90px 80px 36px; gap:8px; padding-bottom:4px;">
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">COLOR</span>
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">SIZE</span>
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">PRICE (&#x24;)</span>
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">STOCK</span>
+                        <span></span>
+                    </div>
+
+                    <div class="variants-list" id="variants-list">
+                        <div class="variant-row">
+                            <select name="variant_color[]" required>
+                                <option value="" disabled selected>Select Color</option>
+                                {% for col in colors %}
+                                <option value="{{ col.color_id }}">{{ col.color_name }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <select name="variant_size[]" required>
+                                <option value="" disabled selected>Select Size</option>
+                                {% for sz in sizes %}
+                                <option value="{{ sz.size_id }}">{{ sz.size_code }} ({{ sz.size_name }})</option>
+                                {% endfor %}
+                            </select>
+
+                            <input type="number" name="variant_price[]" placeholder="Base" min="0" step="0.01">
+                            <input type="number" name="variant_stock[]" placeholder="Qty" min="0" value="10" required>
+
+                            <button type="button" class="btn-remove-variant" onclick="removeVariant(this)" title="Remove">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button type="button" class="btn-add-variant" id="add-variant-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Another Variant
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div class="upload-sidebar">
+
+            
+            <div class="upload-card">
+                <div class="upload-card-header">
+                    <h2>Availability</h2>
+                    <p>Controls whether shoppers can order this product.</p>
+                </div>
+                <div class="upload-card-body">
+                    <select name="status" class="availability-select">
+                        <option value="Available">Available</option>
+                        <option value="Out of Stock">Out of Stock</option>
+                        <option value="Discontinued">Discontinued</option>
+                    </select>
+                </div>
+            </div>
+
+           
+            <div class="upload-card">
+                <div class="upload-card-body" style="gap:12px;">
+                    <button type="submit" class="btn-submit">Upload Product</button>
+                    <a href="{{url_for('vendor.vendor_dash')}}" class="btn-cancel">Cancel</a>
+                </div>
+            </div>
+
+            
+            <div class="tip-block">
+                <strong>Tips for a great listing</strong><br>
+                Use clear, well-lit product photos on a neutral background. Write a concise description
+                that highlights materials, sizing, and care instructions. Add all available size/colour
+                variants so shoppers can find exactly what they need.
+            </div>
+
+        </div>
+
+    </form>
+</div>
+
+<script>
+    /* ── Image preview ─────────────────────────────────── */
+    const fileInput    = document.getElementById('product_images');
+    const previewGrid  = document.getElementById('preview-grid');
+    const dropzone     = document.getElementById('dropzone');
+
+    fileInput.addEventListener('change', renderPreviews);
+
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        fileInput.files = e.dataTransfer.files;
+        renderPreviews();
+    });
+
+    const imageColorOptionsHTML = `
+        <option value="">No color assigned</option>
+        {% for col in colors %}
+        <option value="{{ col.color_id }}">{{ col.color_name }}</option>
+        {% endfor %}
+    `;
+
+    function renderPreviews() {
+        previewGrid.replaceChildren();
+        Array.from(fileInput.files).forEach((file, index) => {
+            const preview = document.createElement('div');
+            preview.className = 'image-preview-item';
+            const label = document.createElement('label');
+            label.textContent = `${file.name} color`;
+            const colorSelect = document.createElement('select');
+            colorSelect.id = `product-image-color-${index}`;
+            colorSelect.name = 'product_image_colors[]';
+            colorSelect.setAttribute('aria-label', `Color shown in ${file.name}`);
+            colorSelect.innerHTML = imageColorOptionsHTML;
+            colorSelect.dataset.fileIndex = String(index);
+            label.htmlFor = colorSelect.id;
+            preview.append(label, colorSelect);
+            previewGrid.appendChild(preview);
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-thumb';
+                    img.alt = file.name;
+                    preview.prepend(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    const variantsList = document.getElementById('variants-list');
+    const colorOptionsHTML = `
+        <option value="" disabled selected>Select Color</option>
+        {% for col in colors %}
+        <option value="{{ col.color_id }}">{{ col.color_name }}</option>
+        {% endfor %}
+    `;
+    const sizeOptionsHTML = `
+        <option value="" disabled selected>Select Size</option>
+        {% for sz in sizes %}
+        <option value="{{ sz.size_id }}">{{ sz.size_code }} ({{ sz.size_name }})</option>
+        {% endfor %}
+    `;
+
+    document.getElementById('add-variant-btn').addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'variant-row';
+        row.innerHTML = `
+            <select name="variant_color[]" required>
+                ${colorOptionsHTML}
+            </select>
+            <select name="variant_size[]" required>
+                ${sizeOptionsHTML}
+            </select>
+            <input type="number" name="variant_price[]" placeholder="Base" min="0" step="0.01">
+            <input type="number" name="variant_stock[]" placeholder="Qty" min="0" value="10" required>
+            <button type="button" class="btn-remove-variant" onclick="removeVariant(this)" title="Remove">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>`;
+        variantsList.appendChild(row);
+    });
+
+    function removeVariant(btn) {
+        const row = btn.closest('.variant-row');
+        if (variantsList.querySelectorAll('.variant-row').length > 1) row.remove();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'categories' %}
+
+{% block title %}Category Control | Regalia Admin{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>Category Control</h1>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1.75fr; gap:2rem; align-items:start;">
+
+    <!-- Add Category Form -->
+    <div style="background:#fff; border-radius:0.75rem; border:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,0.07); padding:1.5rem;">
+        <h2 style="font-size:1rem; font-weight:600; color:#111827; margin-bottom:1.25rem;">Add New Category</h2>
+        <form method="POST" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:600; color:#374151; margin-bottom:0.4rem;" for="category_name">Category Name</label>
+                <input style="width:100%; padding:0.6rem 0.9rem; border:1px solid #d1d5db; border-radius:0.375rem; font-size:0.875rem;" type="text" id="category_name" name="category_name" placeholder="e.g. Men's Wear" required>
+            </div>
+            <div style="margin-bottom:1.25rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:600; color:#374151; margin-bottom:0.4rem;" for="description">Description</label>
+                <textarea style="width:100%; padding:0.6rem 0.9rem; border:1px solid #d1d5db; border-radius:0.375rem; font-size:0.875rem; resize:vertical; height:80px;" id="description" name="description" placeholder="Brief description of this category..."></textarea>
+            </div>
+            <button type="submit" class="btn-primary">Add Category</button>
+        </form>
+    </div>
+
+    <!-- Category List -->
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Category Name</th>
+                    <th>Description</th>
+                    <th>Products</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%for cat in category%}
+                <tr>
+                    <td>{{loop.index}}</td>
+                    <td>{{cat.category_name}}</td>
+                    <td>{{cat.description}}</td>
+                    <td></td>
+                    <td class="action-links">
+                        <a href="#" class="action-edit">Edit</a>
+                        <a href="#" class="action-delete">Delete</a>
+                    </td>
+                </tr>
+                {%endfor%}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

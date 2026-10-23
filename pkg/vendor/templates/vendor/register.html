@@ -1,0 +1,55 @@
+{% extends "vendor/master.html" %}
+
+{% block title %}Vendor Registration | Regalia{% endblock %}
+
+{% block main %}
+<main class="main">
+    <section class="signup-card vendor-register">
+        <h1>Register Your Brand</h1>
+        <h6>Join Regalia as a vendor and showcase your brand to the world.</h6>
+        <form method="POST" action="" enctype="multipart/form-data" class="signup-form register-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- Form fields go here -->
+            <div class="form-group">
+                <label for="brand_name">Brand Name:</label>
+                <input type="text" id="brand_name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="text" id="phone" name="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="confirmpassword">Comfirm Password:</label>
+                <input type="text" id="confirmpassword" name="confirmpassword" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Brand Description:</label>
+                <textarea id="description" name="description" rows="4"></textarea>
+            </div>
+            <div>
+                <label class="dropzone-label" id="dropzone" for="product_images">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 16 12 12 8 16"></polyline>
+                            <line x1="12" y1="12" x2="12" y2="21"></line>
+                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                        </svg>
+                        <strong>Drop photo here or click to browse</strong>
+                        
+                        <input type="file" id="product_images" name="brand_logo"
+                               accept="image/png,image/jpeg,image/webp">
+                </label>
+            </div>
+            <button type="submit" class="signup-btn register-btn">Register Brand</button>
+        </form>
+    </section>
+</main>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'reviews' %}
+
+{% block title %}Review Moderation | Regalia Admin{% endblock %}
+
+{% block content %}
+<style>
+    .reviews-list { display: flex; flex-direction: column; gap: 1rem; }
+    .review-card { background: #fff; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.07); padding: 1.25rem 1.5rem; }
+    .review-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+    .reviewer { font-weight: 600; color: #111827; font-size: 0.9rem; display: block; }
+    .review-info { font-size: 0.8rem; color: #6b7280; display: block; margin-top: 0.15rem; }
+    .stars { color: #f59e0b; font-size: 0.9rem; }
+    .review-comment { font-size: 0.875rem; color: #374151; line-height: 1.6; margin-bottom: 1rem; }
+</style>
+
+<div class="admin-header">
+    <h1>Review Moderation</h1>
+</div>
+
+<div class="filter-bar">
+    <input type="text" placeholder="Search by product or reviewer...">
+    <select>
+        <option value="">All Ratings</option>
+        <option>5 Stars</option>
+        <option>4 Stars</option>
+        <option>3 Stars</option>
+        <option>2 Stars</option>
+        <option>1 Star</option>
+    </select>
+</div>
+
+<div class="reviews-list">
+    <div class="review-card">
+        <div class="review-card-header">
+            <div>
+                <span class="reviewer">Jane Adeyemi</span>
+                <span class="review-info">on <strong>Elysian Silk Blazer</strong> &mdash; Oct 10, 2026</span>
+            </div>
+            <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        </div>
+        <p class="review-comment">"Absolutely stunning quality. The blazer fits perfectly and the material is incredibly soft. Would definitely recommend to anyone looking for luxury fashion."</p>
+        <div class="action-links">
+            <a href="#" class="action-approve">Keep</a>
+            <a href="#" class="action-reject">Remove</a>
+        </div>
+    </div>
+
+    <div class="review-card">
+        <div class="review-card-header">
+            <div>
+                <span class="reviewer">Marcus Flynn</span>
+                <span class="review-info">on <strong>Velvet Evening Gown</strong> &mdash; Oct 11, 2026</span>
+            </div>
+            <span class="stars">&#9733;&#9733;&#9733;&#9734;&#9734;</span>
+        </div>
+        <p class="review-comment">"Delivery was delayed by two weeks and the sizing ran small. The material is nice but the experience was disappointing overall."</p>
+        <div class="action-links">
+            <a href="#" class="action-approve">Keep</a>
+            <a href="#" class="action-reject">Remove</a>
+        </div>
+    </div>
+
+    <div class="review-card">
+        <div class="review-card-header">
+            <div>
+                <span class="reviewer">Amara Osei</span>
+                <span class="review-info">on <strong>Noir Leather Clutch</strong> &mdash; Oct 12, 2026</span>
+            </div>
+            <span class="stars">&#9733;&#9734;&#9734;&#9734;&#9734;</span>
+        </div>
+        <p class="review-comment">"This is spam click here [link removed]. Not a real review."</p>
+        <div class="action-links">
+            <a href="#" class="action-approve">Keep</a>
+            <a href="#" class="action-reject">Remove</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

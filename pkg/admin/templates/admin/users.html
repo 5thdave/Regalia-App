@@ -1,0 +1,60 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'users' %}
+
+{% block title %}User Management | Regalia Admin{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>User Management</h1>
+</div>
+
+<div class="filter-bar">
+    <input type="text" placeholder="Search by name or email...">
+    <select>
+        <option value="">All Statuses</option>
+        <option>Active</option>
+        <option>Inactive</option>
+        <option>Suspended</option>
+    </select>
+    <select>
+        <option value="">All Countries</option>
+        <option>Nigeria</option>
+        <option>United States</option>
+        <option>United Kingdom</option>
+    </select>
+</div>
+
+<div class="table-card">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Country</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%for user in users%}
+            <tr>
+                <td>{{user.id}}</td>
+                <td>{{user.name}}</td>
+                <td>{{user.email}}</td>
+                <td>{{user.phone}}</td>
+                <td>{{user.country}}</td>
+                <td>{{user.time_created}}</td>
+                <td><span class="badge badge-active">{{user.status}}</span></td>
+                <td class="action-links">
+                    <a href="#" class="action-view">View</a>
+                    <a href="#" class="action-suspend">Suspend</a>
+                </td>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

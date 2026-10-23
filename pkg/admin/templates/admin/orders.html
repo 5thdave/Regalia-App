@@ -1,0 +1,153 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'orders' %}
+
+{% block title %}Orders & Payments | Regalia Admin{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>Orders &amp; Payments</h1>
+</div>
+
+<!-- Tabs -->
+<div style="display:flex; border-bottom:2px solid #e5e7eb; margin-bottom:1.5rem;">
+    <button class="tab-btn active" onclick="showTab('orders', this)" style="background:none; border:none; padding:0.75rem 1.5rem; font-size:0.9rem; font-weight:600; color:#111827; cursor:pointer; border-bottom:2px solid #111827; margin-bottom:-2px;">Orders</button>
+    <button class="tab-btn" onclick="showTab('payments', this)" style="background:none; border:none; padding:0.75rem 1.5rem; font-size:0.9rem; font-weight:600; color:#6b7280; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;">Payments</button>
+</div>
+
+<!-- Orders Tab -->
+<div id="orders">
+    <div class="filter-bar">
+        <input type="text" placeholder="Search by order ID or customer...">
+        <select>
+            <option value="">All Statuses</option>
+            <option>Pending</option>
+            <option>Processing</option>
+            <option>Shipped</option>
+            <option>Delivered</option>
+            <option>Cancelled</option>
+        </select>
+    </div>
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>#ORD-0001</td>
+                    <td>Jane Adeyemi</td>
+                    <td>$450.00</td>
+                    <td>Oct 10, 2026</td>
+                    <td><span class="badge badge-delivered">Delivered</span></td>
+                    <td class="action-links"><a href="#" class="action-view">View</a></td>
+                </tr>
+                <tr>
+                    <td>#ORD-0002</td>
+                    <td>Marcus Flynn</td>
+                    <td>$1,200.00</td>
+                    <td>Oct 11, 2026</td>
+                    <td><span class="badge badge-shipped">Shipped</span></td>
+                    <td class="action-links"><a href="#" class="action-view">View</a></td>
+                </tr>
+                <tr>
+                    <td>#ORD-0003</td>
+                    <td>Amara Osei</td>
+                    <td>$320.00</td>
+                    <td>Oct 12, 2026</td>
+                    <td><span class="badge badge-pending">Pending</span></td>
+                    <td class="action-links"><a href="#" class="action-view">View</a></td>
+                </tr>
+                <tr>
+                    <td>#ORD-0004</td>
+                    <td>Lena Müller</td>
+                    <td>$870.00</td>
+                    <td>Oct 13, 2026</td>
+                    <td><span class="badge badge-cancelled">Cancelled</span></td>
+                    <td class="action-links"><a href="#" class="action-view">View</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Payments Tab -->
+<div id="payments" style="display:none;">
+    <div class="filter-bar">
+        <input type="text" placeholder="Search by transaction ref or user...">
+        <select>
+            <option value="">All Statuses</option>
+            <option>Pending</option>
+            <option>Completed</option>
+            <option>Failed</option>
+            <option>Refunded</option>
+        </select>
+    </div>
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>#PAY-001</td>
+                    <td>#ORD-0001</td>
+                    <td>Jane Adeyemi</td>
+                    <td>$450.00</td>
+                    <td>Card</td>
+                    <td>Oct 10, 2026</td>
+                    <td><span class="badge badge-completed">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>#PAY-002</td>
+                    <td>#ORD-0002</td>
+                    <td>Marcus Flynn</td>
+                    <td>$1,200.00</td>
+                    <td>PayPal</td>
+                    <td>Oct 11, 2026</td>
+                    <td><span class="badge badge-completed">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>#PAY-003</td>
+                    <td>#ORD-0003</td>
+                    <td>Amara Osei</td>
+                    <td>$320.00</td>
+                    <td>Card</td>
+                    <td>Oct 12, 2026</td>
+                    <td><span class="badge badge-failed">Failed</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    function showTab(tabId, btn) {
+        document.getElementById('orders').style.display = 'none';
+        document.getElementById('payments').style.display = 'none';
+        document.getElementById(tabId).style.display = 'block';
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.style.color = '#6b7280';
+            b.style.borderBottomColor = 'transparent';
+        });
+        btn.style.color = '#111827';
+        btn.style.borderBottomColor = '#111827';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "main/master.html" %}
+{% block title %}Regalia | Login{% endblock %}
+
+{% block content %}
+<style>
+    .auth-tabs {
+        display: flex;
+        width: 100%;
+        background: #f0f0f0;
+        border-radius: 25px;
+        padding: 4px;
+        margin-bottom: 22px;
+        gap: 4px;
+    }
+
+    .auth-tab {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 21px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        font-weight: 600;
+        color: var(--dim-gray, #716969);
+        cursor: pointer;
+        transition: all 0.25s ease;
+        text-align: center;
+    }
+
+    .auth-tab:hover {
+        color: var(--onyx, #0F0F0F);
+    }
+
+    .auth-tab.active {
+        background: #111212;
+        color: var(--white, #FBFBFB);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .login-subtext {
+        font-size: 0.9rem;
+        color: var(--dim-gray, #716969);
+        margin-top: -16px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .switch {
+        font-size: 0.9rem;
+        color: var(--dim-gray, #716969);
+        text-align: center;
+        margin-top: 12px;
+    }
+
+    .switch span a {
+        color: var(--onyx, #0F0F0F);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        transition: color 0.2s ease;
+    }
+
+    .switch span a:hover {
+        color: var(--lilac-ash, #BCABAE);
+    }
+</style>
+
+<main class="main signupmain">
+    <div class="signup-card login-card">
+        <h2>Login</h2>
+        <p class="login-subtext">Sign in to your account</p>
+
+        <!-- Account Type Switcher Tabs -->
+        <div class="auth-tabs" role="tablist" aria-label="Login Options">
+            <button type="button" class="auth-tab {% if request.endpoint != 'vendor.brand_login' %}active{% endif %}" id="userTabBtn" role="tab" aria-selected="{% if request.endpoint != 'vendor.brand_login' %}true{% else %}false{% endif %}">
+                User
+            </button>
+            <button type="button" class="auth-tab {% if request.endpoint == 'vendor.brand_login' %}active{% endif %}" id="brandTabBtn" role="tab" aria-selected="{% if request.endpoint == 'vendor.brand_login' %}true{% else %}false{% endif %}">
+                Brand
+            </button>
+        </div>
+
+        <!-- User Login Form -->
+        <form id="userLoginForm" action="" method="POST" class="signup-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="login_type" value="user">
+
+            <div class="form-group">
+                <label for="user_email">Email</label>
+                <input type="email" id="user_email" name="email" placeholder="email" autocomplete="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="user_password">Password</label>
+                <input type="password" id="user_password" name="password" placeholder="Password" minlength="8" autocomplete="current-password" required>
+            </div>
+
+            <button type="submit" class="signup-btn">Login as User</button>
+            <p class="switch">New here? <span><a href="{{ url_for('main.user_signup') }}">create account</a></span></p>
+        </form>
+
+        <!-- Brand Login Form -->
+        <form id="brandLoginForm" action="" method="POST" class="signup-form" >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="login_type" value="brand">
+
+            <div class="form-group">
+                <label for="brand_email">Email</label>
+                <input type="email" id="brand_email" name="email" placeholder="email" autocomplete="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="brand_password">Password</label>
+                <input type="password" id="brand_password" name="password" placeholder="Password" minlength="8" autocomplete="current-password" required>
+            </div>
+
+            <button type="submit" class="signup-btn">Login as Brand</button>
+            <p class="switch">New brand? <span><a href="{{ url_for('vendor.register') }}">register your brand</a></span></p>
+        </form>
+    </div>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+    const userTabBtn = document.getElementById("userTabBtn");
+    const brandTabBtn = document.getElementById("brandTabBtn");
+    const userLoginForm = document.getElementById("userLoginForm");
+    const brandLoginForm = document.getElementById("brandLoginForm");
+
+    function showUserTab() {
+        userTabBtn.classList.add("active");
+        userTabBtn.setAttribute("aria-selected", "true");
+        brandTabBtn.classList.remove("active");
+        brandTabBtn.setAttribute("aria-selected", "false");
+
+        userLoginForm.style.display = "flex";
+        brandLoginForm.style.display = "none";
+    }
+
+    function showBrandTab() {
+        brandTabBtn.classList.add("active");
+        brandTabBtn.setAttribute("aria-selected", "true");
+        userTabBtn.classList.remove("active");
+        userTabBtn.setAttribute("aria-selected", "false");
+
+        brandLoginForm.style.display = "flex";
+        userLoginForm.style.display = "none";
+    }
+
+    userTabBtn.addEventListener("click", showUserTab);
+    brandTabBtn.addEventListener("click", showBrandTab);
+
+    // Support deep-linking with #brand or query param ?type=brand or ?role=brand
+    const params = new URLSearchParams(window.location.search);
+    if (window.location.hash === "#brand" || params.get("type") === "brand" || params.get("role") === "brand") {
+        showBrandTab();
+    } else if (window.location.hash === "#user" || params.get("type") === "user" || params.get("role") === "user") {
+        showUserTab();
+    }
+</script>
+{% endblock %}

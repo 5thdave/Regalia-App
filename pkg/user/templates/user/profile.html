@@ -1,0 +1,137 @@
+{% extends "user/master.html" %}
+
+{% block title %}Regalia | Profile{% endblock %}
+
+{% block content %}
+<main class="main profilemain">
+    <section class="profile-hero">
+        <div class="profile-card">
+            <div class="profile-avatar-wrap">
+                <div class="profile-avatar">{{ user_initials }}</div>
+                <div class="profile-name-row">
+                    <h1>{{ profile_user.name or 'Regalia User' }}</h1>
+                </div>
+            </div>
+
+            <div class="profile-info">
+                <div class="profile-contact-meta">
+                    <span class="meta-item">{{ profile_user.email or 'No email provided' }}</span>
+                    <span class="meta-item">{{ profile_user.phone or 'No phone provided' }}</span>
+                    <span class="meta-item">
+                        Member since {{ profile_user.time_created.strftime('%Y') if profile_user.time_created else 'recently' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <a href="{{ url_for('user.logout') }}" class="btn-profile-logout" title="Sign out of your account">Log Out</a>
+            </div>
+        </div>
+
+        <div class="profile-stats-grid">
+            <div class="stat-card">
+                <span class="stat-value" id="stat-fav-count">{{ favorite_brands|length }}</span>
+                <span class="stat-label">Saved Brands</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">{{ profile_user.orders|length }}</span>
+                <span class="stat-label">Recent Orders</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">{{ profile_user.wishlists|length }}</span>
+                <span class="stat-label">Wishlist Items</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="favorite-brands-section" aria-labelledby="fav-brands-heading">
+        <div class="section-header-bar">
+            <div class="section-title-wrap">
+                <div class="title-with-badge">
+                    <h2 id="fav-brands-heading">Favorite Brands</h2>
+                    <span class="badge-count">{{ favorite_brands|length }} saved</span>
+                </div>
+            </div>
+
+            <div class="section-controls">
+                <div class="brand-search-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="brand-search" placeholder="Search saved brands..." aria-label="Search saved brands">
+                </div>
+                <a href="{{ url_for('main.shop') }}" class="btn-discover">Discover More</a>
+            </div>
+        </div>
+
+        <div id="profileshop" class="favorite-brands-grid" aria-live="polite">
+            {% for brand, logo in favorite_brands %}
+                <article class="fav-brand-card" data-brand-search="{{ brand.brand_name or '' }} {{ brand.brand_desc or '' }}">
+                    <form method="post" action="{{ url_for('user.toggle_favorite', brand_id=brand.brand_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="return_to" value="user.user_profile">
+                        <button type="submit" class="btn-fav-toggle is-favorite" title="Remove from favorites" aria-label="Remove {{ brand.brand_name }} from favorites" aria-pressed="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </form>
+                    <a class="fav-logo-wrap" href="{{ url_for('main.shopcollection', brand_id=brand.brand_id) }}" aria-label="View {{ brand.brand_name }} collection">
+                        {% if logo %}
+                            <img src="{{ url_for('static', filename='media/brandlogos/' ~ logo) }}" alt="{{ brand.brand_name }} Logo">
+                        {% else %}
+                            <span>{{ brand.brand_name }}</span>
+                        {% endif %}
+                    </a>
+                    <div class="fav-brand-details">
+                        <h3 class="fav-brand-name">{{ brand.brand_name }}</h3>
+                        {% if brand.brand_desc %}
+                            <span class="fav-brand-category">{{ brand.brand_desc }}</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('main.shopcollection', brand_id=brand.brand_id) }}" class="btn-shop-brand">
+                        <span>View Collection</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                </article>
+            {% else %}
+                <div class="empty-favorites">
+                    <h3>No Favorite Brands Saved</h3>
+                    <p>Tap the heart on a brand logo to save it to your profile.</p>
+                    <a href="{{ url_for('main.shop') }}" class="btn-discover">Explore Shop</a>
+                </div>
+            {% endfor %}
+            <div class="empty-favorites" id="no-brand-matches" hidden>
+                <h3>No Matches Found</h3>
+                <p>No favorite brands match your search.</p>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script>
+    const searchInput = document.getElementById("brand-search");
+    const brandCards = document.querySelectorAll(".fav-brand-card");
+    const noMatches = document.getElementById("no-brand-matches");
+
+    if (searchInput) {
+        searchInput.addEventListener("input", function() {
+            const query = searchInput.value.trim().toLowerCase();
+            let visibleCards = 0;
+            brandCards.forEach(function(card) {
+                const matches = card.dataset.brandSearch.toLowerCase().includes(query);
+                card.hidden = !matches;
+                if (matches) visibleCards += 1;
+            });
+            if (noMatches) noMatches.hidden = visibleCards !== 0 || brandCards.length === 0;
+        });
+    }
+</script>
+{% endblock %}
