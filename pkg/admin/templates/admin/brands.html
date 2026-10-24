@@ -8,15 +8,10 @@
     <h1>Brand Management</h1>
 </div>
 
-<div class="filter-bar">
-    <input type="text" placeholder="Search brand name or email...">
-    <select>
-        <option value="">All Statuses</option>
-        <option>Pending</option>
-        <option>Active</option>
-        <option>Suspended</option>
-    </select>
-</div>
+<form class="filter-bar" method="get">
+    <input type="search" name="q" value="{{ search }}" placeholder="Search brand name, email, or phone..." aria-label="Search brands">
+    <button class="btn-primary" type="submit">Search</button>
+</form>
 
 <div class="table-card">
     <table class="admin-table">
@@ -26,28 +21,19 @@
                 <th>Brand Name</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Date Registered</th>
-                <th>Status</th>
-                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            {%for brand in brands%}
+            {% for brand in brands %}
             <tr>
                 <td>{{brand.brand_id}}</td>
-                <td>{{brand.brand_name}}</td>
-                <td>{{brand.brand_email}}</td>
-                <td>{{brand.brand_phone}}</td>
-                <td>Oct 10, 2026</td>
-                <td><span class="badge badge-pending">Pending</span></td>
-                <td class="action-links">
-                    <a href="#" class="action-approve">Approve</a>
-                    <a href="#" class="action-reject">Reject</a>
-                    <a href="#" class="action-view">View</a>
-                </td>
+                <td>{{brand.brand_name or '—'}}</td>
+                <td>{{brand.brand_email or '—'}}</td>
+                <td>{{brand.brand_phone or '—'}}</td>
             </tr>
-            {%endfor%}
-            
+            {% else %}
+            <tr><td colspan="4" style="text-align:center; padding:2rem; color:#6b7280;">No brands match your search.</td></tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>

@@ -38,7 +38,7 @@
                 <span class="stat-label">Recent Orders</span>
             </div>
             <div class="stat-card">
-                <span class="stat-value">{{ profile_user.wishlists|length }}</span>
+                <span class="stat-value">{{ wishlist_items|length }}</span>
                 <span class="stat-label">Wishlist Items</span>
             </div>
         </div>
@@ -109,6 +109,55 @@
                 <h3>No Matches Found</h3>
                 <p>No favorite brands match your search.</p>
             </div>
+        </div>
+    </section>
+
+    <section class="favorite-brands-section" aria-labelledby="wishlist-heading">
+        <div class="section-header-bar">
+            <div class="section-title-wrap">
+                <div class="title-with-badge">
+                    <h2 id="wishlist-heading">Product Wishlist</h2>
+                    <span class="badge-count">{{ wishlist_items|length }} saved</span>
+                </div>
+            </div>
+            <a href="{{ url_for('main.shop') }}" class="btn-discover">Discover More</a>
+        </div>
+
+        <div class="favorite-brands-grid">
+            {% for item in wishlist_items %}
+                {% set product = item.product %}
+                {% if product %}
+                    <article class="fav-brand-card">
+                        <a class="fav-logo-wrap" href="{{ url_for('main.shopcollection', brand_id=product.brand_id) if product.brand_id else url_for('main.shop') }}" aria-label="View {{ product.product_name or 'product' }}">
+                            {% set cover = product.images|first %}
+                            {% if cover %}
+                                <img src="{{ url_for('static', filename='media/' ~ cover.image) }}" alt="{{ product.product_name or 'Product' }}">
+                            {% else %}
+                                <span>{{ product.product_name or 'Product' }}</span>
+                            {% endif %}
+                        </a>
+                        <div class="fav-brand-details">
+                            <h3 class="fav-brand-name">{{ product.product_name or 'Product' }}</h3>
+                            <span class="fav-brand-category">{{ product.brand.brand_name if product.brand else 'Regalia' }}</span>
+                        </div>
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            {% if product.brand_id %}
+                                <a href="{{ url_for('main.shopcollection', brand_id=product.brand_id) }}" class="btn-shop-brand">View Product</a>
+                            {% endif %}
+                            <form method="post" action="{{ url_for('user.toggle_wishlist', product_id=product.product_id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-shop-brand">Remove</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endif %}
+            {% else %}
+                <div class="empty-favorites">
+                    <h3>Your wishlist is empty</h3>
+                    <p>Save products from a brand collection and they will appear here.</p>
+                    <a href="{{ url_for('main.shop') }}" class="btn-discover">Explore Shop</a>
+                </div>
+            {% endfor %}
         </div>
     </section>
 </main>

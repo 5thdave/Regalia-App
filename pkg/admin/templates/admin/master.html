@@ -121,19 +121,40 @@
         .action-delete   { color: #dc2626; }
         .action-process  { color: #059669; }
         .action-suspend  { color: #dc2626; }
+        .admin-table { min-width: 620px; }
+        .table-card { overflow-x: auto; }
+        .logout-form { display: inline; }
+        .logout-button { padding: 0; border: 0; background: none; color: #4b5563; cursor: pointer; font: inherit; }
+        .logout-button:hover { color: #111827; text-decoration: underline; }
+        .flash-messages { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .flash-message { margin: 0; padding: 0.75rem 1rem; border: 1px solid #fecaca; border-radius: 0.4rem; background: #fef2f2; color: #991b1b; font-size: 0.875rem; }
+        .flash-message.flash-success { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+        @media (max-width: 760px) {
+            .header { padding: 0 1rem; }
+            .header-right { gap: 0.5rem; }
+            .admin-wrapper { flex-direction: column; }
+            .admin-sidebar { position: static; width: 100%; height: auto; padding: 1rem; border-right: 0; border-bottom: 1px solid #e5e7eb; }
+            .admin-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 0; }
+            .admin-nav li { margin: 0; }
+            .admin-content { padding: 1.25rem; }
+            .admin-header h1 { font-size: 1.4rem; }
+        }
     </style>
 </head>
 <body>
 
     <!-- ── Header ── -->
     <header class="header">
-        <a href="#" class="logo">
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="logo">
             <img src="{{url_for('static', filename='img/logo.png')}}" alt="Regalia Logo">
             <span>REGALIA</span>
         </a>
         <div class="header-right">
-            Admin Panel &nbsp;|&nbsp; <span>Super Admin</span>
-            <a href="{{ url_for('admin.logout') }}">Log out</a>
+            Admin Panel &nbsp;|&nbsp; <span>Administrator</span>
+            <form class="logout-form" method="post" action="{{ url_for('admin.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="logout-button" type="submit">Log out</button>
+            </form>
         </div>
     </header>
 
@@ -156,6 +177,15 @@
 
         <!-- ── Page Content ── -->
         <main class="admin-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" aria-live="polite">
+                        {% for category, message in messages %}
+                            <p class="flash-message flash-{{ category }}" role="alert">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
             {% block content %}{% endblock %}
         </main>
 

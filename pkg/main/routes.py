@@ -1,15 +1,4 @@
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    flash,
-    jsonify,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    session,
-)
+from flask import  Blueprint, abort, current_app, flash, jsonify, render_template, request, redirect,url_for,  session
 from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from pkg.models import (
@@ -19,11 +8,14 @@ from pkg.models import (
     BrandLogo,
     Category,
     FavoriteBrand,
+    Wishlist,
     Product,
     ProductImage,
     ProductVariant,
     Size,
+    Admin,
 )
+
 from sqlalchemy.orm import selectinload
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -85,6 +77,9 @@ def login():
         else:
             user = User.query.filter_by(email=email).first()
             if user and check_password_hash(user.password, password):
+                if user.status != 'Active':
+                    flash('This account is not active. Please contact support.', 'error')
+                    return render_template('main/login.html')
                 session.clear()
                 session['useronline'] = user.id
                 
@@ -181,6 +176,16 @@ def shopcollection(brand_id):
         )
     )
     products = db.session.scalars(stmt).all()
+    user_id = session.get('useronline')
+    wishlisted_product_ids = set()
+    if user_id:
+        wishlisted_product_ids = set(
+            db.session.scalars(
+                db.select(Wishlist.wishlistproduct_id).where(
+                    Wishlist.wishlistuser_id == user_id
+                )
+            ).all()
+        )
     product_details = [
         {
             'id': product.product_id,
@@ -218,7 +223,6 @@ def shopcollection(brand_id):
         }
         for product in products
     ]
-    user_id = session.get('useronline')
     user = db.session.get(User, user_id) if user_id else None
     return render_template(
         'main/shopcollection.html',
@@ -227,7 +231,8 @@ def shopcollection(brand_id):
         products=products,
         product_details=product_details,
         user=user,
-        useronline=user_id
+        useronline=user_id,
+        wishlisted_product_ids=wishlisted_product_ids,
     )
 
 
@@ -297,3 +302,11 @@ def filter_collection_size(brand_id):
 @main.get('/shopcollection/<int:brand_id>/filter/category')
 def filter_collection_category(brand_id):
     return _filtered_collection_product_ids(brand_id)
+
+@main.route('/adduser')
+def addusers():
+    password = generate_password_hash('admin12345')
+    admin = Admin(name='Mr David',email='admin@gmail.com',password=password)
+    db.session.add(admin)
+    db.session.commit()
+    return 'Admin Added'

@@ -42,15 +42,15 @@
                     <ul>
                         <li>
                             <input type="checkbox" id="price-under-500" name="price" value="under-500">
-                            <label for="price-under-500">Under $500</label>
+                            <label for="price-under-500">Under {{ config.CURRENCY_SYMBOL }}500</label>
                         </li>
                         <li>
                             <input type="checkbox" id="price-500-1000" name="price" value="500-1000">
-                            <label for="price-500-1000">$500 – $1,000</label>
+                            <label for="price-500-1000">{{ config.CURRENCY_SYMBOL }}500 – {{ config.CURRENCY_SYMBOL }}1,000</label>
                         </li>
                         <li>
                             <input type="checkbox" id="price-over-1000" name="price" value="over-1000">
-                            <label for="price-over-1000">Over $1,000</label>
+                            <label for="price-over-1000">Over {{ config.CURRENCY_SYMBOL }}1,000</label>
                         </li>
                     </ul>
                 </div>
@@ -140,12 +140,43 @@
                     </button>
                     <div class="product-price-actions">
                         <span class="product-price">
-                            ${{ '%.2f'|format(p.price) if p.price is not none else 'Price unavailable' }}
+                            {{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(p.price) if p.price is not none else 'Price unavailable' }}
                         </span>
                         <button class="addtoCartBtn" type="button" data-cart-action="add"
                                 data-product-id="{{ p.product_id }}">
                             Add to cart
                         </button>
+                    </div>
+                    <div class="product-community-actions">
+                        {% if useronline %}
+                            <form method="post" action="{{ url_for('user.toggle_wishlist', product_id=p.product_id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="product-secondary-button{% if p.product_id in wishlisted_product_ids %} is-saved{% endif %}" type="submit" aria-pressed="{{ 'true' if p.product_id in wishlisted_product_ids else 'false' }}">
+                                    {{ 'Remove from wishlist' if p.product_id in wishlisted_product_ids else 'Add to wishlist' }}
+                                </button>
+                            </form>
+                            <details class="product-review-details">
+                                <summary class="product-secondary-button">Write a review</summary>
+                                <form class="product-review-form" method="post" action="{{ url_for('user.add_review', product_id=p.product_id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <label for="review-rating-{{ p.product_id }}">Rating</label>
+                                    <select id="review-rating-{{ p.product_id }}" name="rating" required>
+                                        <option value="">Choose a rating</option>
+                                        <option value="5">5 — Excellent</option>
+                                        <option value="4">4 — Very good</option>
+                                        <option value="3">3 — Good</option>
+                                        <option value="2">2 — Fair</option>
+                                        <option value="1">1 — Poor</option>
+                                    </select>
+                                    <label for="review-comment-{{ p.product_id }}">Comment <span>(optional)</span></label>
+                                    <textarea id="review-comment-{{ p.product_id }}" name="comment" maxlength="2000" rows="3" placeholder="Share your experience"></textarea>
+                                    <button class="addtoCartBtn" type="submit">Submit review</button>
+                                </form>
+                            </details>
+                        {% else %}
+                            <a class="product-secondary-button" href="{{ url_for('main.login') }}">Log in to wishlist</a>
+                            <a class="product-secondary-button" href="{{ url_for('main.login') }}">Log in to review</a>
+                        {% endif %}
                     </div>
                 </article>
                 {% else %}
@@ -196,7 +227,7 @@
         <div id="cart-items"></div>
         <div class="cart-dialog-summary">
             <span id="cart-item-count">0 items</span>
-            <strong id="cart-total">$0.00</strong>
+            <strong id="cart-total">{{ config.CURRENCY_SYMBOL }}0.00</strong>
         </div>
         <div class="cart-dialog-actions">
             <button class="addtoCartBtn" id="continue-shopping" type="button">Continue shopping</button>
@@ -379,7 +410,7 @@
         return price === null ? "Price unavailable" :
             new Intl.NumberFormat(undefined, {
                 style: "currency",
-                currency: "USD"
+                currency: {{ config.CURRENCY|tojson }}
             }).format(price);
     }
 

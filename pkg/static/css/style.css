@@ -1375,6 +1375,108 @@ body {
     padding: 0 16px 16px;
 }
 
+.product-community-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0 16px 16px;
+}
+
+.product-community-actions form {
+    margin: 0;
+}
+
+.product-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--onyx);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.product-secondary-button:hover,
+.product-secondary-button.is-saved {
+    border-color: var(--onyx);
+    background: #f3f4f6;
+}
+
+.product-secondary-button:focus-visible,
+.product-review-form input:focus-visible,
+.product-review-form select:focus-visible,
+.product-review-form textarea:focus-visible {
+    outline: 3px solid var(--lilac-ash);
+    outline-offset: 2px;
+}
+
+.product-review-details {
+    position: relative;
+}
+
+.product-review-details summary {
+    list-style: none;
+}
+
+.product-review-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.product-review-form {
+    position: absolute;
+    z-index: 2;
+    top: calc(100% + 8px);
+    right: 0;
+    display: grid;
+    width: min(280px, calc(100vw - 48px));
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.product-review-form label {
+    color: var(--graphite);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.product-review-form label span {
+    color: var(--dim-gray);
+    font-weight: 400;
+}
+
+.product-review-form input,
+.product-review-form select,
+.product-review-form textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: var(--onyx);
+    font: inherit;
+    font-size: 0.82rem;
+}
+
+.product-review-form textarea {
+    resize: vertical;
+}
+
+.product-review-form .addtoCartBtn {
+    justify-self: start;
+}
+
 .product-modal-actions {
     display: flex;
     justify-content: space-between;

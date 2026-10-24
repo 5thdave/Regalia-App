@@ -4,31 +4,252 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login | Regalia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #111827;
+            background: #f9fafb;
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .login-page {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.25rem;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 1.75rem;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .brand img {
+            width: 2.5rem;
+            height: 2.5rem;
+            object-fit: contain;
+        }
+
+        .brand span {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+        }
+
+        .login-card {
+            width: min(100%, 26rem);
+            padding: 2.25rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+        }
+
+        .eyebrow {
+            margin: 0 0 0.6rem;
+            color: #6b7280;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            color: #111827;
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .intro {
+            margin: 0.55rem 0 1.75rem;
+            color: #6b7280;
+            font-size: 0.925rem;
+            line-height: 1.55;
+        }
+
+        .flash-messages {
+            display: grid;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .flash-message {
+            margin: 0;
+            padding: 0.75rem 0.875rem;
+            border: 1px solid #fecaca;
+            border-radius: 0.4rem;
+            background: #fef2f2;
+            color: #991b1b;
+            font-size: 0.875rem;
+            line-height: 1.45;
+        }
+
+        .flash-message.flash-success {
+            border-color: #a7f3d0;
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .form-field {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.45rem;
+            color: #374151;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            min-height: 2.9rem;
+            padding: 0.7rem 0.8rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.4rem;
+            background: #fff;
+            color: #111827;
+            font: inherit;
+            font-size: 0.925rem;
+        }
+
+        input::placeholder {
+            color: #9ca3af;
+        }
+
+        input:focus-visible {
+            border-color: #4b5563;
+            outline: 3px solid rgba(75, 85, 99, 0.16);
+            outline-offset: 1px;
+        }
+
+        .submit-button {
+            width: 100%;
+            min-height: 2.9rem;
+            margin-top: 0.25rem;
+            border: 0;
+            border-radius: 0.4rem;
+            background: #111827;
+            color: #fff;
+            cursor: pointer;
+            font: inherit;
+            font-size: 0.925rem;
+            font-weight: 600;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .submit-button:hover {
+            background: #2d3748;
+        }
+
+        .submit-button:active {
+            transform: translateY(1px);
+        }
+
+        .submit-button:focus-visible,
+        .back-link:focus-visible,
+        .brand:focus-visible {
+            outline: 3px solid #9ca3af;
+            outline-offset: 3px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            color: #4b5563;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: #111827;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .page-note {
+            margin: 1.5rem 0 0;
+            color: #9ca3af;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .login-page {
+                justify-content: flex-start;
+                padding-top: max(2rem, 8vh);
+            }
+
+            .login-card {
+                padding: 1.75rem 1.35rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <main>
-        <h1>Admin Login</h1>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div aria-live="polite">
-                    {% for category, message in messages %}
-                        <p class="flash-{{ category }}">{{ message }}</p>
-                    {% endfor %}
+    <main class="login-page">
+        <a class="brand" href="{{ url_for('main.index') }}" aria-label="Regalia home">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+            <span>REGALIA</span>
+        </a>
+
+        <section class="login-card" aria-labelledby="login-heading">
+            <p class="eyebrow">Admin portal</p>
+            <h1 id="login-heading">Welcome back</h1>
+            <p class="intro">Sign in with your administrator account to continue.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" aria-live="polite">
+                        {% for category, message in messages %}
+                            <p class="flash-message flash-{{ category }}" role="alert">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
                 </div>
-            {% endif %}
-        {% endwith %}
-        <form method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div>
-                <label for="email">Email</label>
-                <input id="email" name="email" type="email" autocomplete="username" required>
-            </div>
-            <div>
-                <label for="password">Password</label>
-                <input id="password" name="password" type="password" autocomplete="current-password" required>
-            </div>
-            <button type="submit">Log in</button>
-        </form>
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+                </div>
+                <button class="submit-button" type="submit">Sign in</button>
+            </form>
+        </section>
+
+        <a class="back-link" href="{{ url_for('main.index') }}">Return to Regalia storefront</a>
+        <p class="page-note">Authorized administrators only</p>
     </main>
 </body>
 </html>

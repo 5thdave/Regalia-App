@@ -8,146 +8,145 @@
     <h1>Orders &amp; Payments</h1>
 </div>
 
-<!-- Tabs -->
-<div style="display:flex; border-bottom:2px solid #e5e7eb; margin-bottom:1.5rem;">
-    <button class="tab-btn active" onclick="showTab('orders', this)" style="background:none; border:none; padding:0.75rem 1.5rem; font-size:0.9rem; font-weight:600; color:#111827; cursor:pointer; border-bottom:2px solid #111827; margin-bottom:-2px;">Orders</button>
-    <button class="tab-btn" onclick="showTab('payments', this)" style="background:none; border:none; padding:0.75rem 1.5rem; font-size:0.9rem; font-weight:600; color:#6b7280; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;">Payments</button>
+<div role="tablist" aria-label="Order records" style="display:flex; gap:1.5rem; border-bottom:1px solid #e5e7eb; margin-bottom:1.5rem;">
+    <button class="record-tab active" id="orders-tab" type="button" role="tab" aria-selected="true" aria-controls="orders-panel" data-panel="orders-panel">Orders</button>
+    <button class="record-tab" id="payments-tab" type="button" role="tab" aria-selected="false" aria-controls="payments-panel" data-panel="payments-panel">Payments</button>
 </div>
 
-<!-- Orders Tab -->
-<div id="orders">
-    <div class="filter-bar">
-        <input type="text" placeholder="Search by order ID or customer...">
-        <select>
-            <option value="">All Statuses</option>
-            <option>Pending</option>
-            <option>Processing</option>
-            <option>Shipped</option>
-            <option>Delivered</option>
-            <option>Cancelled</option>
+<section id="orders-panel" role="tabpanel" aria-labelledby="orders-tab">
+    <form class="filter-bar" method="get">
+        <input type="search" name="q" value="{{ search }}" placeholder="Search order, customer, or payment reference..." aria-label="Search orders">
+        <select name="order_status" aria-label="Filter orders by status">
+            <option value="">All order statuses</option>
+            {% for value in order_statuses %}
+                <option value="{{ value }}" {% if order_status == value %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
         </select>
-    </div>
+        <button class="btn-primary" type="submit">Filter orders</button>
+    </form>
     <div class="table-card">
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Order ID</th>
+                    <th>Order</th>
                     <th>Customer</th>
                     <th>Amount</th>
                     <th>Date</th>
                     <th>Status</th>
+                    <th>Payment</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>#ORD-0001</td>
-                    <td>Jane Adeyemi</td>
-                    <td>$450.00</td>
-                    <td>Oct 10, 2026</td>
-                    <td><span class="badge badge-delivered">Delivered</span></td>
-                    <td class="action-links"><a href="#" class="action-view">View</a></td>
-                </tr>
-                <tr>
-                    <td>#ORD-0002</td>
-                    <td>Marcus Flynn</td>
-                    <td>$1,200.00</td>
-                    <td>Oct 11, 2026</td>
-                    <td><span class="badge badge-shipped">Shipped</span></td>
-                    <td class="action-links"><a href="#" class="action-view">View</a></td>
-                </tr>
-                <tr>
-                    <td>#ORD-0003</td>
-                    <td>Amara Osei</td>
-                    <td>$320.00</td>
-                    <td>Oct 12, 2026</td>
-                    <td><span class="badge badge-pending">Pending</span></td>
-                    <td class="action-links"><a href="#" class="action-view">View</a></td>
-                </tr>
-                <tr>
-                    <td>#ORD-0004</td>
-                    <td>Lena Müller</td>
-                    <td>$870.00</td>
-                    <td>Oct 13, 2026</td>
-                    <td><span class="badge badge-cancelled">Cancelled</span></td>
-                    <td class="action-links"><a href="#" class="action-view">View</a></td>
-                </tr>
+                {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.order_id }}</td>
+                        <td>{{ order.user.name if order.user else 'Unknown customer' }}<br><small>{{ order.user.email if order.user else '' }}</small></td>
+                        <td>{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(order.order_amt or 0) }}</td>
+                        <td>{{ order.order_date.strftime('%b %d, %Y') if order.order_date else '—' }}</td>
+                        <td><span class="badge badge-{{ (order.order_status or 'pending')|lower }}">{{ order.order_status or 'Pending' }}</span></td>
+                        <td>
+                            {% if order.payments %}
+                                {% for payment in order.payments %}
+                                    <span class="badge badge-{{ (payment.status or 'pending')|lower }}">{{ payment.status or 'Pending' }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge badge-inactive">No payment</span>
+                            {% endif %}
+                        </td>
+                        <td><a class="action-view" href="{{ url_for('admin.order_detail', order_id=order.order_id) }}">View order</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7">No orders match your filters.</td></tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
-</div>
+</section>
 
-<!-- Payments Tab -->
-<div id="payments" style="display:none;">
-    <div class="filter-bar">
-        <input type="text" placeholder="Search by transaction ref or user...">
-        <select>
-            <option value="">All Statuses</option>
-            <option>Pending</option>
-            <option>Completed</option>
-            <option>Failed</option>
-            <option>Refunded</option>
+<section id="payments-panel" role="tabpanel" aria-labelledby="payments-tab" hidden>
+    <form class="filter-bar" method="get">
+        <input type="search" name="q" value="{{ search }}" placeholder="Search transaction reference or customer..." aria-label="Search payments">
+        <select name="payment_status" aria-label="Filter payments by status">
+            <option value="">All payment statuses</option>
+            {% for value in payment_statuses %}
+                <option value="{{ value }}" {% if payment_status == value %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
         </select>
-    </div>
+        <button class="btn-primary" type="submit">Filter payments</button>
+    </form>
     <div class="table-card">
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Payment ID</th>
-                    <th>Order ID</th>
+                    <th>Payment</th>
+                    <th>Order</th>
                     <th>Customer</th>
                     <th>Amount</th>
                     <th>Method</th>
+                    <th>Reference</th>
                     <th>Date</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>#PAY-001</td>
-                    <td>#ORD-0001</td>
-                    <td>Jane Adeyemi</td>
-                    <td>$450.00</td>
-                    <td>Card</td>
-                    <td>Oct 10, 2026</td>
-                    <td><span class="badge badge-completed">Completed</span></td>
-                </tr>
-                <tr>
-                    <td>#PAY-002</td>
-                    <td>#ORD-0002</td>
-                    <td>Marcus Flynn</td>
-                    <td>$1,200.00</td>
-                    <td>PayPal</td>
-                    <td>Oct 11, 2026</td>
-                    <td><span class="badge badge-completed">Completed</span></td>
-                </tr>
-                <tr>
-                    <td>#PAY-003</td>
-                    <td>#ORD-0003</td>
-                    <td>Amara Osei</td>
-                    <td>$320.00</td>
-                    <td>Card</td>
-                    <td>Oct 12, 2026</td>
-                    <td><span class="badge badge-failed">Failed</span></td>
-                </tr>
+                {% for payment in payments %}
+                    <tr>
+                        <td>#{{ payment.payment_id }}</td>
+                        <td>
+                            {% if payment.order %}
+                                <a href="{{ url_for('admin.order_detail', order_id=payment.order.order_id) }}">#{{ payment.order.order_id }}</a>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ payment.user.name if payment.user else 'Unknown customer' }}</td>
+                        <td>{{ payment.currency or config.CURRENCY }} {{ '%.2f'|format(payment.amount or 0) }}</td>
+                        <td>{{ payment.payment_method or payment.payment_gateway or '—' }}</td>
+                        <td>{{ payment.transaction_ref or '—' }}</td>
+                        <td>{{ payment.time_created.strftime('%b %d, %Y') if payment.time_created else '—' }}</td>
+                        <td><span class="badge badge-{{ (payment.status or 'pending')|lower }}">{{ payment.status or 'Pending' }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8">No payments match your filters.</td></tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
-</div>
+</section>
 {% endblock %}
 
 {% block script %}
+<style>
+    .record-tab {
+        padding: 0.75rem 0.1rem;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .record-tab.active { border-bottom-color: #111827; color: #111827; }
+    .record-tab:focus-visible { outline: 3px solid #9ca3af; outline-offset: 3px; }
+</style>
 <script>
-    function showTab(tabId, btn) {
-        document.getElementById('orders').style.display = 'none';
-        document.getElementById('payments').style.display = 'none';
-        document.getElementById(tabId).style.display = 'block';
-        document.querySelectorAll('.tab-btn').forEach(b => {
-            b.style.color = '#6b7280';
-            b.style.borderBottomColor = 'transparent';
+    const recordTabs = document.querySelectorAll('.record-tab');
+    recordTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            recordTabs.forEach((item) => {
+                const isActive = item === tab;
+                item.classList.toggle('active', isActive);
+                item.setAttribute('aria-selected', String(isActive));
+                document.getElementById(item.dataset.panel).hidden = !isActive;
+            });
         });
-        btn.style.color = '#111827';
-        btn.style.borderBottomColor = '#111827';
+    });
+    if (window.location.search.includes('payment_status=')) {
+        document.getElementById('payments-tab').click();
     }
 </script>
 {% endblock %}

@@ -63,14 +63,17 @@
                         <td><code style="background:#f3f4f6; padding:0.2rem 0.45rem; border-radius:0.25rem; font-size:0.8rem; font-weight:600;">{{ col.hex_code }}</code></td>
                         <td>
                             <span class="badge {% if col.variants|length > 0 %}badge-active{% else %}badge-inactive{% endif %}">
-                                {{ col.variants|length }} variants
+                                {{ col.variants|length + col.images|length }} uses
                             </span>
                         </td>
                         <td class="action-links">
-                            {% if col.variants|length == 0 %}
-                            <a href="{{ url_for('admin.delete_color', color_id=col.color_id) }}" class="action-delete" onclick="return confirm('Are you sure you want to delete {{ col.color_name }}?');">Delete</a>
+                            {% if col.variants|length == 0 and col.images|length == 0 %}
+                            <form method="post" action="{{ url_for('admin.delete_color', color_id=col.color_id) }}" onsubmit="return confirm('Are you sure you want to delete this color?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="action-delete" type="submit" style="border:0; background:none; cursor:pointer; font:inherit; font-size:0.8rem; font-weight:600;">Delete</button>
+                            </form>
                             {% else %}
-                            <span style="color:#9ca3af; font-size:0.8rem;" title="Cannot delete: color is used by existing product variants">In Use</span>
+                            <span style="color:#9ca3af; font-size:0.8rem;" title="Cannot delete: this color is used by product variants or images">In Use</span>
                             {% endif %}
                         </td>
                     </tr>

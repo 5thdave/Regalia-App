@@ -14,13 +14,73 @@ from flask import (
     url_for,
     request,
 )
-from pkg.models import db, Brand, Product, ProductImage, ProductVariant, BrandLogo, FavoriteBrand, User, Order,OrderItem, Payment
+from sqlalchemy import update
+from pkg.models import (
+    db,
+    Brand,
+    Product,
+    ProductImage,
+    ProductVariant,
+    BrandLogo,
+    FavoriteBrand,
+    Wishlist,
+    Review,
+    User,
+    Order,
+    OrderItem,
+    Payment,
+)
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import joinedload, selectinload
 
 from dotenv import load_dotenv
 
 load_dotenv()
 user = Blueprint('user', __name__, template_folder='templates', static_folder='static')
+
+
+class _InsufficientInventory(Exception):
+    pass
+
+
+def _decrement_order_inventory(order):
+    requested_quantities = {}
+    for item in order.items:
+        if item.itemvariant_id is None or item.quantity is None or item.quantity < 1:
+            raise _InsufficientInventory
+        requested_quantities[item.itemvariant_id] = (
+            requested_quantities.get(item.itemvariant_id, 0) + item.quantity
+        )
+
+    if not requested_quantities:
+        raise _InsufficientInventory
+
+    for variant_id, quantity in requested_quantities.items():
+        result = db.session.execute(
+            update(ProductVariant)
+            .where(
+                ProductVariant.variant_id == variant_id,
+                ProductVariant.stock_quantity >= quantity,
+            )
+            .values(stock_quantity=ProductVariant.stock_quantity - quantity)
+        )
+        if result.rowcount != 1:
+            raise _InsufficientInventory
+
+
+@user.before_request
+def require_active_user():
+    user_id = session.get('useronline')
+    if user_id is None or request.endpoint == 'user.logout':
+        return None
+
+    current_user = db.session.get(User, user_id)
+    if current_user is None or current_user.status != 'Active':
+        session.pop('useronline', None)
+        flash('Your account is not active. Please contact support.', 'error')
+        return redirect(url_for('main.login'))
+
+    return None
 
 
 @user.errorhandler(SQLAlchemyError)
@@ -86,6 +146,16 @@ def user_profile():
         .order_by(Brand.brand_name)
         .all()
     )
+    wishlist_items = (
+        Wishlist.query
+        .filter_by(wishlistuser_id=current_user.id)
+        .options(
+            joinedload(Wishlist.product).joinedload(Product.brand),
+            joinedload(Wishlist.product).selectinload(Product.images),
+        )
+        .order_by(Wishlist.time_added.desc(), Wishlist.wishlist_id.desc())
+        .all()
+    )
     user_initials = ''.join(
         part[0] for part in (current_user.name or '').split()[:2]
     ).upper() or '?'
@@ -94,6 +164,7 @@ def user_profile():
         profile_user=current_user,
         user_initials=user_initials,
         favorite_brands=favorite_brands,
+        wishlist_items=wishlist_items,
     )
 
 
@@ -132,6 +203,76 @@ def toggle_favorite(brand_id):
     }
     destination = destinations.get(request.form.get('return_to'), 'user.user_profile')
     return redirect(url_for(destination))
+
+
+@user.route('/wishlist/<int:product_id>', methods=['POST'])
+def toggle_wishlist(product_id):
+    user_id = session.get('useronline')
+    if user_id is None:
+        flash('Please log in to add products to your wishlist.', 'error')
+        return redirect(url_for('main.login'))
+
+    product = db.get_or_404(Product, product_id)
+    wishlist_item = Wishlist.query.filter_by(
+        wishlistuser_id=user_id,
+        wishlistproduct_id=product.product_id,
+    ).first()
+
+    if wishlist_item:
+        db.session.delete(wishlist_item)
+        message = f'{product.product_name or "Product"} removed from your wishlist.'
+    else:
+        db.session.add(Wishlist(
+            wishlistuser_id=user_id,
+            wishlistproduct_id=product.product_id,
+        ))
+        message = f'{product.product_name or "Product"} added to your wishlist.'
+
+    db.session.commit()
+    flash(message, 'success')
+    if product.brand_id is None:
+        return redirect(url_for('main.shop'))
+    return redirect(url_for('main.shopcollection', brand_id=product.brand_id))
+
+
+@user.route('/reviews/<int:product_id>', methods=['POST'])
+def add_review(product_id):
+    user_id = session.get('useronline')
+    if user_id is None:
+        flash('Please log in to review products.', 'error')
+        return redirect(url_for('main.login'))
+
+    product = db.get_or_404(Product, product_id)
+    rating_value = request.form.get('rating', '')
+    comment = request.form.get('comment', '').strip()
+
+    try:
+        rating = int(rating_value)
+    except (TypeError, ValueError):
+        rating = 0
+
+    if rating not in range(1, 6):
+        flash('Choose a rating from 1 to 5 stars.', 'error')
+        if product.brand_id is None:
+            return redirect(url_for('main.shop'))
+        return redirect(url_for('main.shopcollection', brand_id=product.brand_id))
+    if len(comment) > 2000:
+        flash('Reviews must be 2,000 characters or fewer.', 'error')
+        if product.brand_id is None:
+            return redirect(url_for('main.shop'))
+        return redirect(url_for('main.shopcollection', brand_id=product.brand_id))
+
+    db.session.add(Review(
+        user_id=user_id,
+        product_id=product.product_id,
+        rating=rating,
+        comment=comment or None,
+    ))
+    db.session.commit()
+    flash('Thank you. Your review has been added.', 'success')
+    if product.brand_id is None:
+        return redirect(url_for('main.shop'))
+    return redirect(url_for('main.shopcollection', brand_id=product.brand_id))
 
 
 @user.route('/logout')
@@ -225,7 +366,7 @@ def pay_initialize(item_id=None):
     payload = {
         "email": customer.email,
         "amount": amount_in_minor_units,
-        "currency": "NGN",
+        "currency": current_app.config["CURRENCY"],
         "reference": reference,
         "callback_url": url_for("user.pay_confirm", _external=True),
     }
@@ -276,7 +417,7 @@ def pay_initialize(item_id=None):
         paymentuser_id=customer.id,
         transaction_ref=reference,
         amount=amount,
-        currency="NGN",
+        currency=current_app.config["CURRENCY"],
         status="Pending",
         payment_method="Paystack",
         payment_gateway="Paystack",
@@ -336,29 +477,110 @@ def pay_confirm():
         )
         abort(500, description="The payment is not linked to an order.")
 
-    if payment.status == "Pending":
-        if data.get("status") == "success":
-            payment.status = "Completed"
-            order.order_status = "Processing"
-        else:
-            payment.status = "Failed"
-            order.order_status = "Cancelled"
-        db.session.commit()
-        flash(
-            "Payment completed successfully."
-            if payment.status == "Completed"
-            else "Payment was not completed.",
-            "success" if payment.status == "Completed" else "error",
+    if payment.status == "Pending" and data.get("status") == "success":
+        claim = db.session.execute(
+            update(Payment)
+            .where(
+                Payment.payment_id == payment.payment_id,
+                Payment.status == "Pending",
+            )
+            .values(status="Completed")
         )
+        if claim.rowcount == 1:
+            try:
+                _decrement_order_inventory(order)
+            except _InsufficientInventory:
+                db.session.rollback()
+                claim = db.session.execute(
+                    update(Payment)
+                    .where(
+                        Payment.payment_id == payment.payment_id,
+                        Payment.status == "Pending",
+                    )
+                    .values(status="Completed")
+                )
+                if claim.rowcount == 1:
+                    db.session.execute(
+                        update(Order)
+                        .where(Order.order_id == order.order_id)
+                        .values(order_status="Cancelled")
+                    )
+                    db.session.commit()
+                    current_app.logger.error(
+                        "Payment %s succeeded, but inventory was unavailable for order %s.",
+                        payment.payment_id,
+                        order.order_id,
+                    )
+                    flash(
+                        "Your payment succeeded, but the items could not be reserved. "
+                        "Please contact support about a refund.",
+                        "error",
+                    )
+                else:
+                    db.session.rollback()
+                    db.session.refresh(payment)
+                    flash(
+                        "Payment completed successfully."
+                        if payment.status == "Completed"
+                        else "Payment was not completed.",
+                        "success" if payment.status == "Completed" else "error",
+                    )
+            else:
+                order.order_status = "Processing"
+                db.session.commit()
+                flash("Payment completed successfully.", "success")
+        else:
+            db.session.rollback()
+            db.session.refresh(payment)
+            flash(
+                "Payment completed successfully."
+                if payment.status == "Completed"
+                else "Payment was not completed.",
+                "success" if payment.status == "Completed" else "error",
+            )
+    elif payment.status == "Pending":
+        claim = db.session.execute(
+            update(Payment)
+            .where(
+                Payment.payment_id == payment.payment_id,
+                Payment.status == "Pending",
+            )
+            .values(status="Failed")
+        )
+        if claim.rowcount == 1:
+            db.session.execute(
+                update(Order)
+                .where(Order.order_id == order.order_id)
+                .values(order_status="Cancelled")
+            )
+            db.session.commit()
+            flash("Payment was not completed.", "error")
+        else:
+            db.session.rollback()
+            db.session.refresh(payment)
+            flash(
+                "Payment completed successfully."
+                if payment.status == "Completed"
+                else "Payment was not completed.",
+                "success" if payment.status == "Completed" else "error",
+            )
 
     order_item = order.items[0] if order.items else None
     if order_item and order_item.product:
-        checkout_succeeded = payment.status == "Completed"
+        checkout_succeeded = (
+            payment.status == "Completed" and order.order_status != "Cancelled"
+        )
         return redirect(
             url_for(
                 "main.shopcollection",
                 brand_id=order_item.product.brand_id,
-                checkout="success" if checkout_succeeded else None,
+                checkout=(
+                    "success"
+                    if checkout_succeeded
+                    else "inventory_issue"
+                    if payment.status == "Completed"
+                    else None
+                ),
             )
         )
     return redirect(url_for("main.shop"))

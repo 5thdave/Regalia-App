@@ -8,85 +8,107 @@
     <h1>Payouts</h1>
 </div>
 
-<!-- Summary Cards -->
+<p style="margin:-1.25rem 0 1.5rem; color:#6b7280; font-size:0.875rem;">
+    Record payments made outside Regalia. This page does not send money to brands.
+</p>
+
 <div class="stats-grid">
     <div class="stat-card">
-        <h3>Total Pending</h3>
-        <p class="value">$8,340</p>
+        <h3>Pending net payouts</h3>
+        <p class="value">{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(pending_total or 0) }}</p>
     </div>
     <div class="stat-card">
-        <h3>Processed This Month</h3>
-        <p class="value">$42,100</p>
+        <h3>Processed this month</h3>
+        <p class="value">{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(processed_this_month or 0) }}</p>
     </div>
     <div class="stat-card">
-        <h3>Platform Commission</h3>
-        <p class="value">$4,210</p>
+        <h3>Total commission</h3>
+        <p class="value">{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(total_commission or 0) }}</p>
     </div>
 </div>
 
-<div class="filter-bar">
-    <input type="text" placeholder="Search by brand or reference...">
-    <select>
-        <option value="">All Statuses</option>
-        <option>Pending</option>
-        <option>Processed</option>
-        <option>Failed</option>
+<section class="table-card" style="padding:1.25rem 1.5rem; margin-bottom:1.5rem;">
+    <h2 style="margin-bottom:0.4rem; color:#111827; font-size:1rem;">Create a pending payout</h2>
+    <p style="margin-bottom:1rem; color:#6b7280; font-size:0.875rem;">
+        Only delivered orders with a completed payment are eligible. Enter the agreed commission percentage.
+    </p>
+    {% if eligible_payouts %}
+        <form method="post" action="{{ url_for('admin.create_payout') }}" class="filter-bar" style="margin-bottom:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="order_brand" aria-label="Eligible order and brand" required style="flex:2; min-width:240px;">
+                <option value="">Select an eligible order and brand</option>
+                {% for item in eligible_payouts %}
+                    <option value="{{ item.order_id }}:{{ item.brand_id }}">Order #{{ item.order_id }} — {{ item.brand_name }}</option>
+                {% endfor %}
+            </select>
+            <label style="display:flex; align-items:center; gap:0.5rem; color:#374151; font-size:0.875rem;">
+                Commission %
+                <input type="number" name="commission_rate" min="0" max="100" step="0.01" required style="width:7rem;">
+            </label>
+            <button class="btn-primary" type="submit">Create payout</button>
+        </form>
+    {% else %}
+        <p style="color:#6b7280; font-size:0.875rem;">There are no eligible delivered orders without an existing payout.</p>
+    {% endif %}
+</section>
+
+<form class="filter-bar" method="get">
+    <input type="search" name="q" value="{{ search }}" placeholder="Search by brand, payout, or order..." aria-label="Search payouts">
+    <select name="status" aria-label="Filter payouts by status">
+        <option value="">All statuses</option>
+        {% for value in payout_statuses %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
     </select>
-</div>
+    <button class="btn-primary" type="submit">Filter payouts</button>
+</form>
 
 <div class="table-card">
     <table class="admin-table">
         <thead>
             <tr>
-                <th>Payout ID</th>
+                <th>Payout</th>
                 <th>Brand</th>
-                <th>Order ID</th>
+                <th>Order</th>
                 <th>Gross</th>
                 <th>Commission</th>
-                <th>Net Payout</th>
+                <th>Net payout</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th>Transfer reference / action</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>#PO-001</td>
-                <td>Elysian Attire</td>
-                <td>#ORD-0001</td>
-                <td>$450.00</td>
-                <td>$45.00</td>
-                <td>$405.00</td>
-                <td><span class="badge badge-pending">Pending</span></td>
-                <td class="action-links">
-                    <a href="#" class="action-process">Process</a>
-                    <a href="#" class="action-view">View</a>
-                </td>
-            </tr>
-            <tr>
-                <td>#PO-002</td>
-                <td>Elysian Attire</td>
-                <td>#ORD-0002</td>
-                <td>$1,200.00</td>
-                <td>$120.00</td>
-                <td>$1,080.00</td>
-                <td><span class="badge badge-pending">Pending</span></td>
-                <td class="action-links">
-                    <a href="#" class="action-process">Process</a>
-                    <a href="#" class="action-view">View</a>
-                </td>
-            </tr>
-            <tr>
-                <td>#PO-003</td>
-                <td>Noir Maison</td>
-                <td>#ORD-0005</td>
-                <td>$670.00</td>
-                <td>$67.00</td>
-                <td>$603.00</td>
-                <td><span class="badge badge-processed">Processed</span></td>
-                <td class="action-links">
-                    <a href="#" class="action-view">View</a>
-                </td>
-            </tr>
+            {% for payout in payouts %}
+                <tr>
+                    <td>#{{ payout.payout_id }}</td>
+                    <td>{{ payout.brand.brand_name if payout.brand else 'Unknown brand' }}</td>
+                    <td>
+                        {% if payout.order %}
+                            <a href="{{ url_for('admin.order_detail', order_id=payout.order.order_id) }}">#{{ payout.order.order_id }}</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(payout.gross_amount or 0) }}</td>
+                    <td>{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(payout.commission_amount or 0) }}{% if payout.commission_rate is not none %}<br><small>{{ '%.2f'|format(payout.commission_rate) }}%</small>{% endif %}</td>
+                    <td>{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(payout.net_amount or 0) }}</td>
+                    <td><span class="badge badge-{{ (payout.status or 'pending')|lower }}">{{ payout.status or 'Pending' }}</span></td>
+                    <td>
+                        {% if payout.status == 'Pending' %}
+                            <form method="post" action="{{ url_for('admin.process_payout', payout_id=payout.payout_id) }}" style="display:grid; gap:0.4rem; min-width:200px;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input id="reference-{{ payout.payout_id }}" name="payout_reference" maxlength="100" placeholder="External transfer reference" aria-label="External transfer reference for payout {{ payout.payout_id }}" required>
+                                <button type="submit" class="action-process" style="width:fit-content; border:0; background:none; cursor:pointer; font:inherit; font-size:0.8rem; font-weight:600;">Record as processed</button>
+                            </form>
+                        {% else %}
+                            {{ payout.payout_reference or '—' }}
+                            {% if payout.paid_at %}<br><small>{{ payout.paid_at.strftime('%b %d, %Y') }}</small>{% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8">No payouts match your filters.</td></tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>

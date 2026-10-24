@@ -1,0 +1,89 @@
+{% extends "admin/master.html" %}
+{% set active_page = 'orders' %}
+
+{% block title %}Order #{{ order.order_id }} | Regalia Admin{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <div>
+        <a class="action-view" href="{{ url_for('admin.orders') }}">← Back to orders</a>
+        <h1 style="margin-top:0.5rem;">Order #{{ order.order_id }}</h1>
+    </div>
+    <span class="badge badge-{{ (order.order_status or 'pending')|lower }}">{{ order.order_status or 'Pending' }}</span>
+</div>
+
+<div class="stats-grid">
+    <section class="stat-card">
+        <h3>Customer</h3>
+        <p style="color:#111827; font-weight:600;">{{ order.user.name if order.user else 'Unknown customer' }}</p>
+        <p style="color:#6b7280; font-size:0.875rem;">{{ order.user.email if order.user else 'No email on record' }}</p>
+    </section>
+    <section class="stat-card">
+        <h3>Order total</h3>
+        <p class="value">{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(order.order_amt or 0) }}</p>
+    </section>
+    <section class="stat-card">
+        <h3>Placed</h3>
+        <p style="color:#111827; font-weight:600;">{{ order.order_date.strftime('%b %d, %Y %H:%M') if order.order_date else '—' }}</p>
+    </section>
+</div>
+
+<section style="margin-bottom:2rem;">
+    <div class="admin-header" style="margin-bottom:1rem;"><h2 style="font-size:1.1rem;">Items</h2></div>
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Product</th><th>Brand</th><th>Variant</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody>
+                {% for item in order.items %}
+                    <tr>
+                        <td>{{ item.product.product_name if item.product else 'Unknown product' }}</td>
+                        <td>{{ item.product.brand.brand_name if item.product and item.product.brand else '—' }}</td>
+                        <td>
+                            {% if item.variant %}
+                                {{ item.variant.color.color_name if item.variant.color else '' }}
+                                {% if item.variant.color and item.variant.size %} / {% endif %}
+                                {{ item.variant.size.size_code if item.variant.size else '' }}
+                                {% if not item.variant.color and not item.variant.size %}—{% endif %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ item.quantity or 0 }}</td>
+                        <td>{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format(item.unit_price or 0) }}</td>
+                        <td>{{ config.CURRENCY_SYMBOL }}{{ '%.2f'|format((item.unit_price or 0) * (item.quantity or 0)) }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6">No items are associated with this order.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section>
+    <div class="admin-header" style="margin-bottom:1rem;"><h2 style="font-size:1.1rem;">Payments</h2></div>
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Payment</th><th>Amount</th><th>Method</th><th>Reference</th><th>Date</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for payment in order.payments %}
+                    <tr>
+                        <td>#{{ payment.payment_id }}</td>
+                        <td>{{ payment.currency or config.CURRENCY }} {{ '%.2f'|format(payment.amount or 0) }}</td>
+                        <td>{{ payment.payment_method or payment.payment_gateway or '—' }}</td>
+                        <td>{{ payment.transaction_ref or '—' }}</td>
+                        <td>{{ payment.time_created.strftime('%b %d, %Y') if payment.time_created else '—' }}</td>
+                        <td><span class="badge badge-{{ (payment.status or 'pending')|lower }}">{{ payment.status or 'Pending' }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6">No payment records are associated with this order.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

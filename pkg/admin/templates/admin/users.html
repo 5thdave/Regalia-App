@@ -8,21 +8,22 @@
     <h1>User Management</h1>
 </div>
 
-<div class="filter-bar">
-    <input type="text" placeholder="Search by name or email...">
-    <select>
-        <option value="">All Statuses</option>
-        <option>Active</option>
-        <option>Inactive</option>
-        <option>Suspended</option>
+<form class="filter-bar" method="get">
+    <input type="search" name="q" value="{{ search }}" placeholder="Search by name or email..." aria-label="Search users">
+    <select name="status" aria-label="Filter by user status">
+        <option value="">All statuses</option>
+        {% for value in ['Active', 'Inactive', 'Suspended'] %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
     </select>
-    <select>
-        <option value="">All Countries</option>
-        <option>Nigeria</option>
-        <option>United States</option>
-        <option>United Kingdom</option>
+    <select name="country" aria-label="Filter by country">
+        <option value="">All countries</option>
+        {% for value in countries %}
+            <option value="{{ value }}" {% if country == value %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
     </select>
-</div>
+    <button class="btn-primary" type="submit">Filter users</button>
+</form>
 
 <div class="table-card">
     <table class="admin-table">
@@ -39,21 +40,30 @@
             </tr>
         </thead>
         <tbody>
-            {%for user in users%}
+            {% for user in users %}
             <tr>
-                <td>{{user.id}}</td>
-                <td>{{user.name}}</td>
-                <td>{{user.email}}</td>
-                <td>{{user.phone}}</td>
-                <td>{{user.country}}</td>
-                <td>{{user.time_created}}</td>
-                <td><span class="badge badge-active">{{user.status}}</span></td>
-                <td class="action-links">
-                    <a href="#" class="action-view">View</a>
-                    <a href="#" class="action-suspend">Suspend</a>
+                <td>{{ user.id }}</td>
+                <td>{{ user.name or '—' }}</td>
+                <td>{{ user.email or '—' }}</td>
+                <td>{{ user.phone or '—' }}</td>
+                <td>{{ user.country or '—' }}</td>
+                <td>{{ user.time_created.strftime('%b %d, %Y') if user.time_created else '—' }}</td>
+                <td><span class="badge badge-{{ (user.status or 'inactive')|lower }}">{{ user.status or 'Inactive' }}</span></td>
+                <td>
+                    <form method="post" action="{{ url_for('admin.update_user_status', user_id=user.id) }}" style="display:flex; align-items:center; gap:0.4rem; min-width:190px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="status" aria-label="Set status for {{ user.name or user.email }}" style="padding:0.4rem; border:1px solid #d1d5db; border-radius:0.35rem;">
+                            {% for value in ['Active', 'Inactive', 'Suspended'] %}
+                                <option value="{{ value }}" {% if user.status == value %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn-primary" type="submit">Save</button>
+                    </form>
                 </td>
             </tr>
-            {%endfor%}
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; padding:2rem; color:#6b7280;">No users match your filters.</td></tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
