@@ -36,6 +36,31 @@
             </div>
         {% endfor %}
     </section>
+
+    <section class="newsletter-signup" aria-labelledby="newsletter-title">
+        <div class="newsletter-copy">
+            <p class="newsletter-eyebrow">THE REGALIA EDIT</p>
+            <h2 id="newsletter-title">A little luxury in your inbox.</h2>
+            <p>Sign up for new arrivals, brand stories, and members-only updates.</p>
+        </div>
+        <form class="newsletter-form" method="post" action="{{ url_for('main.newsletter_subscribe') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="newsletter-email">Email address</label>
+            <div class="newsletter-input-row">
+                <input
+                    id="newsletter-email"
+                    name="email"
+                    type="email"
+                    autocomplete="email"
+                    maxlength="254"
+                    placeholder="you@example.com"
+                    required
+                >
+                <button type="submit">Subscribe</button>
+            </div>
+            <small>By subscribing, you agree to receive occasional marketing emails. You can unsubscribe at any time.</small>
+        </form>
+    </section>
 </main>
 
 <nav class="sticky-social-links" aria-label="Regalia social media">
