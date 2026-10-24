@@ -455,7 +455,7 @@
                             </select>
                         </div>
                         <div class="field-group">
-                            <label for="base_price">Base Price (&#x24;)</label>
+                            <label for="base_price">Base Price ({{ config.CURRENCY_SYMBOL }})</label>
                             <input type="number" id="base_price" name="base_price"
                                    placeholder="0.00" min="0" step="0.01" required>
                         </div>
@@ -508,7 +508,7 @@
                     <div style="display:grid; grid-template-columns: 1.2fr 1fr 90px 80px 36px; gap:8px; padding-bottom:4px;">
                         <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">COLOR</span>
                         <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">SIZE</span>
-                        <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">PRICE (&#x24;)</span>
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">PRICE ({{ config.CURRENCY_SYMBOL }})</span>
                         <span style="font-size:0.75rem;font-weight:700;color:var(--dim-gray);letter-spacing:.5px;">STOCK</span>
                         <span></span>
                     </div>

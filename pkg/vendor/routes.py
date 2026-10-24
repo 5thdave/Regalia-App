@@ -1,5 +1,7 @@
 import os
+import re
 import secrets
+from decimal import Decimal, InvalidOperation
 from flask import (
     Blueprint,
     abort,
@@ -19,6 +21,71 @@ from sqlalchemy.orm import selectinload
 
 
 vendor = Blueprint('vendor', __name__, template_folder='templates', static_folder='static')
+
+MAX_PRODUCT_IMAGES = 8
+MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+PRODUCT_STATUSES = {'Available', 'Out of Stock', 'Discontinued'}
+MAX_PRICE = Decimal('99999999.99')
+
+
+def _upload_form_response(status_code=200):
+    categories = Category.query.order_by(Category.category_name).all()
+    colors = Color.query.order_by(Color.color_name).all()
+    sizes = Size.query.order_by(Size.sort_order).all()
+    return render_template(
+        'vendor/upload.html',
+        category=categories,
+        colors=colors,
+        sizes=sizes,
+    ), status_code
+
+
+def _parse_positive_price(value, field_name):
+    try:
+        price = Decimal(value.strip())
+    except (AttributeError, InvalidOperation):
+        raise ValueError(f'{field_name} must be a valid price.')
+    if (
+        not price.is_finite()
+        or price <= 0
+        or price > MAX_PRICE
+        or price != price.quantize(Decimal('0.01'))
+    ):
+        raise ValueError(f'{field_name} must be greater than zero and have at most two decimal places.')
+    return price
+
+
+def _parse_positive_id(value, field_name):
+    if not value or not re.fullmatch(r'[0-9]+', value.strip()):
+        raise ValueError(f'{field_name} must be selected.')
+    parsed_value = int(value)
+    if parsed_value < 1 or parsed_value > 2147483647:
+        raise ValueError(f'{field_name} must be selected.')
+    return parsed_value
+
+
+def _image_signature_matches(extension, header):
+    return (
+        (extension in {'.jpg', '.jpeg'} and header.startswith(b'\xff\xd8\xff'))
+        or (extension == '.png' and header.startswith(b'\x89PNG\r\n\x1a\n'))
+        or (
+            extension == '.webp'
+            and len(header) >= 12
+            and header[:4] == b'RIFF'
+            and header[8:12] == b'WEBP'
+        )
+    )
+
+
+def _remove_uploaded_files(paths):
+    for path in paths:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            continue
+        except OSError:
+            current_app.logger.exception('Could not remove failed product upload %s.', path)
 
 
 @vendor.errorhandler(SQLAlchemyError)
@@ -82,80 +149,163 @@ def upload():
         return redirect(url_for('main.login'))
 
     if request.method == 'POST':
-        product_name = request.form.get('product_name')
-        category_id = request.form.get('category')
-        base_price = request.form.get('base_price')
-        description = request.form.get('description')
+        product_name = (request.form.get('product_name') or '').strip()
+        description = (request.form.get('description') or '').strip()
         status = request.form.get('status', 'Available')
+        uploaded_files = [
+            file for file in request.files.getlist('product_images')
+            if file and file.filename
+        ]
+        uploaded_paths = []
 
-        product = Product(
-            product_name=product_name,
-            brand_id=brand_id,
-            category_id=category_id,
-            price=base_price,
-            description=description,
-            status=status
-        )
-        db.session.add(product)
-        db.session.flush()
+        try:
+            if not product_name or len(product_name) > 100:
+                raise ValueError('Product name is required and must be 100 characters or fewer.')
+            category_id = _parse_positive_id(request.form.get('category'), 'Category')
+            if db.session.get(Category, category_id) is None:
+                raise ValueError('Select an existing category.')
+            base_price = _parse_positive_price(
+                request.form.get('base_price'),
+                'Base price',
+            )
+            if status not in PRODUCT_STATUSES:
+                raise ValueError('Select a valid product status.')
+            if len(uploaded_files) > MAX_PRODUCT_IMAGES:
+                raise ValueError(f'Upload no more than {MAX_PRODUCT_IMAGES} product images.')
 
-        # Handle uploaded photos
-        uploaded_files = request.files.getlist('product_images')
-        image_color_ids = request.form.getlist('product_image_colors[]')
-        upload_folder = os.path.join(current_app.root_path, 'static', 'media')
-        os.makedirs(upload_folder, exist_ok=True)
+            image_color_ids = request.form.getlist('product_image_colors[]')
+            if image_color_ids and len(image_color_ids) != len(uploaded_files):
+                raise ValueError('Choose a color for each uploaded image or leave it unassigned.')
 
-        for index, file in enumerate(uploaded_files):
-            if file and file.filename != '':
+            validated_images = []
+            for index, file in enumerate(uploaded_files):
                 filename = secure_filename(file.filename)
+                extension = os.path.splitext(filename)[1].lower()
+                if not filename or extension not in ALLOWED_IMAGE_EXTENSIONS:
+                    raise ValueError('Product images must be JPG, PNG, or WEBP files.')
+
+                image_data = file.stream.read(MAX_PRODUCT_IMAGE_SIZE + 1)
+                file.stream.seek(0)
+                if len(image_data) > MAX_PRODUCT_IMAGE_SIZE:
+                    raise ValueError('Each product image must be 5 MB or smaller.')
+                if not image_data or not _image_signature_matches(extension, image_data[:12]):
+                    raise ValueError('An uploaded file is not a valid JPG, PNG, or WEBP image.')
+
+                color_value = image_color_ids[index].strip() if image_color_ids else ''
+                color_id = None
+                if color_value:
+                    color_id = _parse_positive_id(color_value, 'Image color')
+                    if db.session.get(Color, color_id) is None:
+                        raise ValueError('Select an existing color for each product image.')
+                validated_images.append((file, filename, color_id))
+
+            variant_color_ids = request.form.getlist('variant_color[]')
+            variant_size_ids = request.form.getlist('variant_size[]')
+            variant_prices = request.form.getlist('variant_price[]')
+            variant_stocks = request.form.getlist('variant_stock[]')
+            variant_count = len(variant_color_ids)
+            if (
+                variant_count == 0
+                or len(variant_size_ids) != variant_count
+                or len(variant_prices) != variant_count
+                or len(variant_stocks) != variant_count
+            ):
+                raise ValueError('Add at least one complete product variant.')
+
+            validated_variants = []
+            seen_variants = set()
+            for color_value, size_value, price_value, stock_value in zip(
+                variant_color_ids,
+                variant_size_ids,
+                variant_prices,
+                variant_stocks,
+            ):
+                color_id = _parse_positive_id(color_value, 'Variant color')
+                size_id = _parse_positive_id(size_value, 'Variant size')
+                if (
+                    db.session.get(Color, color_id) is None
+                    or db.session.get(Size, size_id) is None
+                ):
+                    raise ValueError('Select an existing color and size for every variant.')
+
+                variant_key = (color_id, size_id)
+                if variant_key in seen_variants:
+                    raise ValueError('Each color and size combination can only be added once.')
+                seen_variants.add(variant_key)
+
+                price = (
+                    _parse_positive_price(price_value, 'Variant price')
+                    if price_value.strip()
+                    else base_price
+                )
+                if not re.fullmatch(r'[0-9]+', stock_value.strip()):
+                    raise ValueError('Variant stock must be a whole number of zero or more.')
+                stock = int(stock_value)
+                if stock > 2147483647:
+                    raise ValueError('Variant stock is too large.')
+                validated_variants.append((color_id, size_id, price, stock))
+        except ValueError as error:
+            flash(str(error), 'error')
+            return _upload_form_response(400)
+
+        brand = db.session.get(Brand, brand_id)
+        if brand is None:
+            session.pop('brandonline', None)
+            flash('Your brand account could not be found. Please log in again.', 'error')
+            return redirect(url_for('main.login'))
+
+        try:
+            product = Product(
+                product_name=product_name,
+                brand_id=brand_id,
+                category_id=category_id,
+                price=base_price,
+                description=description or None,
+                status=status,
+            )
+            db.session.add(product)
+            db.session.flush()
+
+            upload_folder = os.path.join(current_app.root_path, 'static', 'media')
+            os.makedirs(upload_folder, exist_ok=True)
+            for file, filename, color_id in validated_images:
                 unique_filename = f"{secrets.token_hex(8)}_{filename}"
-                file.save(os.path.join(upload_folder, unique_filename))
-                color_value = image_color_ids[index] if index < len(image_color_ids) else ''
-                color_id = int(color_value) if color_value.isdigit() else None
-                if color_id is not None and db.session.get(Color, color_id) is None:
-                    abort(400, description='Selected image color does not exist.')
-                img = ProductImage(
+                file_path = os.path.join(upload_folder, unique_filename)
+                uploaded_paths.append(file_path)
+                file.save(file_path)
+                db.session.add(ProductImage(
                     product_id=product.product_id,
                     image=unique_filename,
                     color_id=color_id,
-                )
-                db.session.add(img)
+                ))
 
-        # Handle variants (color, size, price override, stock)
-        variant_color_ids = request.form.getlist('variant_color[]')
-        variant_size_ids = request.form.getlist('variant_size[]')
-        variant_prices = request.form.getlist('variant_price[]')
-        variant_stocks = request.form.getlist('variant_stock[]')
-
-        for i in range(len(variant_color_ids)):
-            c_val = variant_color_ids[i] if i < len(variant_color_ids) else None
-            s_val = variant_size_ids[i] if i < len(variant_size_ids) else None
-            p_val = variant_prices[i] if i < len(variant_prices) else None
-            q_val = variant_stocks[i] if i < len(variant_stocks) else 0
-
-            color_id = int(c_val) if c_val and str(c_val).isdigit() else None
-            size_id = int(s_val) if s_val and str(s_val).isdigit() else None
-            price = float(p_val) if p_val and str(p_val).strip() else base_price
-            stock = int(q_val) if q_val and str(q_val).isdigit() else 0
-
-            if color_id or size_id:
-                variant = ProductVariant(
+            for color_id, size_id, price, stock in validated_variants:
+                db.session.add(ProductVariant(
                     productvariant_id=product.product_id,
                     color_id=color_id,
                     size_id=size_id,
                     price=price,
-                    stock_quantity=stock
-                )
-                db.session.add(variant)
+                    stock_quantity=stock,
+                ))
 
-        db.session.commit()
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            _remove_uploaded_files(uploaded_paths)
+            current_app.logger.exception('Could not save uploaded product %s.', product_name)
+            flash('The product could not be saved. Please try again.', 'error')
+            return _upload_form_response(503)
+        except OSError:
+            db.session.rollback()
+            _remove_uploaded_files(uploaded_paths)
+            current_app.logger.exception('Could not store images for product %s.', product_name)
+            flash('The product images could not be stored. Please try again.', 'error')
+            return _upload_form_response(503)
+
         flash("Product uploaded successfully.", "success")
         return redirect(url_for('vendor.vendor_dash'))
 
-    categories = Category.query.all()
-    colors = Color.query.order_by(Color.color_name).all()
-    sizes = Size.query.order_by(Size.sort_order).all()
-    return render_template('vendor/upload.html', category=categories, colors=colors, sizes=sizes)
+    return _upload_form_response()
 
 
 @vendor.route('/dashboard', methods=['GET', 'POST'])

@@ -13,4 +13,5 @@ class GeneralConfig:
 
 class DevelopmentConfig(GeneralConfig):
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    MAX_CONTENT_LENGTH = 20 * 1024 * 1024
     

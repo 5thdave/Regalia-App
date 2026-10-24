@@ -30,7 +30,7 @@ from pkg.models import (
     OrderItem,
     Payment,
 )
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import joinedload, selectinload
 
 from dotenv import load_dotenv
@@ -243,6 +243,35 @@ def add_review(product_id):
         return redirect(url_for('main.login'))
 
     product = db.get_or_404(Product, product_id)
+    existing_review = Review.query.filter_by(
+        user_id=user_id,
+        product_id=product.product_id,
+    ).first()
+    if existing_review:
+        flash('You have already reviewed this product.', 'error')
+        if product.brand_id is None:
+            return redirect(url_for('main.shop'))
+        return redirect(url_for('main.shopcollection', brand_id=product.brand_id))
+
+    purchased_item = (
+        db.session.query(OrderItem)
+        .join(Order, Order.order_id == OrderItem.itemorder_id)
+        .join(Payment, Payment.paymentorder_id == Order.order_id)
+        .filter(
+            Order.orderuser_id == user_id,
+            Order.order_status != 'Cancelled',
+            Payment.status == 'Completed',
+            OrderItem.itemproduct_id == product.product_id,
+        )
+        .order_by(Order.order_date.desc(), OrderItem.orderitem_id.desc())
+        .first()
+    )
+    if purchased_item is None:
+        flash('You can review this product after completing a purchase.', 'error')
+        if product.brand_id is None:
+            return redirect(url_for('main.shop'))
+        return redirect(url_for('main.shopcollection', brand_id=product.brand_id))
+
     rating_value = request.form.get('rating', '')
     comment = request.form.get('comment', '').strip()
 
@@ -267,8 +296,21 @@ def add_review(product_id):
         product_id=product.product_id,
         rating=rating,
         comment=comment or None,
+        order_item_id=purchased_item.orderitem_id,
     ))
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        if Review.query.filter_by(
+            user_id=user_id,
+            product_id=product.product_id,
+        ).first() is None:
+            raise
+        flash('You have already reviewed this product.', 'error')
+        if product.brand_id is None:
+            return redirect(url_for('main.shop'))
+        return redirect(url_for('main.shopcollection', brand_id=product.brand_id))
     flash('Thank you. Your review has been added.', 'success')
     if product.brand_id is None:
         return redirect(url_for('main.shop'))

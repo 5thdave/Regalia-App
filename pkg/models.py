@@ -166,6 +166,9 @@ class Payment(db.Model):
     
 class Review(db.Model):
     __tablename__ = 'review'
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'product_id', name='uq_review_user_product'),
+    )
     review_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     comment = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -193,3 +196,10 @@ class Payout(db.Model):
     paid_at = db.Column(db.DateTime)
     payout_reference = db.Column(db.String(100))
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class NewsletterSubscriber(db.Model):
+    __tablename__ = 'newsletter_subscribers'
+    subscriber_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    email = db.Column(db.String(254), nullable=False, unique=True, index=True)
+    subscribed_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())

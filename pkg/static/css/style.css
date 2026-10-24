@@ -26,6 +26,152 @@ body {
     background: var(--white);
 }
 
+.newsletter-signup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+    align-items: center;
+    gap: 2.5rem;
+    padding: clamp(2rem, 6vw, 5rem) clamp(1.25rem, 7vw, 6rem);
+    background: #f1edeb;
+}
+
+.newsletter-eyebrow {
+    margin-bottom: 0.5rem;
+    color: var(--dim-gray);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+}
+
+.newsletter-copy h2 {
+    margin-bottom: 0.5rem;
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.newsletter-copy > p:last-child {
+    color: var(--dim-gray);
+}
+
+.newsletter-form {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.newsletter-form label {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.newsletter-input-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.newsletter-input-row input {
+    min-width: 0;
+    flex: 1;
+    min-height: 46px;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid #b8b2b0;
+    border-radius: 6px;
+    background: #fff;
+    font: inherit;
+}
+
+.newsletter-input-row button {
+    min-height: 46px;
+    padding: 0.7rem 1.1rem;
+    border: 0;
+    border-radius: 6px;
+    background: var(--onyx);
+    color: var(--white);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+}
+
+.newsletter-input-row button:hover {
+    background: var(--graphite);
+}
+
+.newsletter-form small {
+    color: var(--dim-gray);
+    font-size: 0.75rem;
+}
+
+.sticky-social-links {
+    position: fixed;
+    z-index: 110;
+    top: 50%;
+    right: 1rem;
+    display: grid;
+    gap: 0.5rem;
+    transform: translateY(-50%);
+}
+
+.sticky-social-links a {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    background: #111212;
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.sticky-social-links a:hover {
+    transform: translateX(-3px);
+    background: var(--graphite);
+}
+
+.sticky-social-links a:focus-visible,
+.newsletter-input-row input:focus-visible,
+.newsletter-input-row button:focus-visible {
+    outline: 3px solid #8b6f72;
+    outline-offset: 3px;
+}
+
+.sticky-social-links svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.sticky-social-links a:last-child svg {
+    fill: currentColor;
+    stroke: none;
+}
+
+.sticky-social-links .social-icon-dot {
+    fill: currentColor;
+    stroke: none;
+}
+
+@media (max-width: 640px) {
+    .newsletter-signup {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .sticky-social-links {
+        right: 0.65rem;
+    }
+
+    .sticky-social-links a {
+        width: 40px;
+        height: 40px;
+    }
+
+    .newsletter-input-row {
+        flex-direction: column;
+    }
+}
+
 
 .header {
     display: flex;
@@ -1475,6 +1621,84 @@ body {
 
 .product-review-form .addtoCartBtn {
     justify-self: start;
+}
+
+.product-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+    color: #604a18;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.product-rating-empty,
+.review-eligibility-note {
+    color: var(--dim-gray);
+    font-size: 0.76rem;
+    font-weight: 500;
+}
+
+.product-reviews {
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.product-reviews h3 {
+    margin: 0 0 0.35rem;
+}
+
+.product-review-summary {
+    color: #604a18;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.product-review-list {
+    display: grid;
+    max-height: 240px;
+    gap: 0.75rem;
+    margin-top: 0.65rem;
+    overflow-y: auto;
+}
+
+.product-review-entry {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.product-review-entry-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.product-review-stars {
+    color: #8a6b19;
+    white-space: nowrap;
+}
+
+.product-review-date {
+    color: var(--dim-gray);
+    font-size: 0.75rem;
+}
+
+.product-review-verified {
+    display: inline-block;
+    margin-right: 0.5rem;
+    color: #286044;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.product-review-entry p {
+    margin-top: 0.5rem;
+    overflow-wrap: anywhere;
 }
 
 .product-modal-actions {

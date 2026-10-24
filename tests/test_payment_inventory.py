@@ -89,6 +89,8 @@ class PaymentInventoryTestCase(unittest.TestCase):
         self.order_id = order.order_id
         self.payment_id = payment.payment_id
         self.variant_id = variant.variant_id
+        self.product_id = product.product_id
+        self.brand_id = brand.brand_id
         self.initial_stock = variant.stock_quantity
         app.config['PAYSTACK_API_SECRET_KEY'] = 'test-paystack-secret'
 
@@ -216,6 +218,46 @@ class PaymentInventoryTestCase(unittest.TestCase):
         )
         self.assertEqual(db.session.get(Payment, self.payment_id).status, 'Failed')
         self.assertEqual(db.session.get(Order, self.order_id).order_status, 'Cancelled')
+
+    @patch('pkg.user.routes.requests.post')
+    def test_checkout_uses_store_currency_for_paystack_and_payment_record(
+        self,
+        initialize_payment,
+    ):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = {
+            'status': True,
+            'data': {'authorization_url': 'https://paystack.example/checkout'},
+        }
+        initialize_payment.return_value = response
+
+        result = self.client.post(
+            '/user/pay_initialize',
+            data={'variant_id': str(self.variant_id), 'quantity': '1'},
+        )
+
+        self.assertEqual(result.status_code, 302)
+        payload = initialize_payment.call_args.kwargs['json']
+        self.assertEqual(app.config['CURRENCY'], 'NGN')
+        self.assertEqual(payload['currency'], app.config['CURRENCY'])
+        self.assertEqual(payload['amount'], 2500)
+        created_payment = (
+            Payment.query
+            .filter(Payment.payment_id != self.payment_id)
+            .one()
+        )
+        self.assertEqual(created_payment.currency, app.config['CURRENCY'])
+
+    def test_product_card_and_cart_show_store_currency(self):
+        response = self.client.get(f'/shopcollection/{self.brand_id}')
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertIn('₦25.00', page)
+        self.assertIn('₦0.00', page)
+        self.assertIn('currency: "NGN"', page)
+        self.assertNotIn('currency: "USD"', page)
 
 
 if __name__ == '__main__':

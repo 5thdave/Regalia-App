@@ -1,6 +1,8 @@
+import re
+
 from flask import  Blueprint, abort, current_app, flash, jsonify, render_template, request, redirect,url_for,  session
 from sqlalchemy import and_, func, or_
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pkg.models import (
     db,
     User,
@@ -14,6 +16,11 @@ from pkg.models import (
     ProductVariant,
     Size,
     Admin,
+    NewsletterSubscriber,
+    Review,
+    Order,
+    OrderItem,
+    Payment,
 )
 
 from sqlalchemy.orm import selectinload
@@ -21,6 +28,52 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 
 main = Blueprint('main', __name__, template_folder='templates', static_folder='static')
+
+
+def _product_review_details(product):
+    ordered_reviews = sorted(
+        product.reviews,
+        key=lambda review: (
+            review.created_at is not None,
+            review.created_at,
+            review.review_id,
+        ),
+        reverse=True,
+    )
+    rated_reviews = [
+        review for review in ordered_reviews
+        if review.rating is not None and 1 <= review.rating <= 5
+    ]
+    return {
+        'average_rating': (
+            sum(review.rating for review in rated_reviews) / len(rated_reviews)
+            if rated_reviews
+            else None
+        ),
+        'review_count': len(rated_reviews),
+        'reviews': [
+            {
+                'rating': (
+                    review.rating
+                    if review.rating is not None and 1 <= review.rating <= 5
+                    else None
+                ),
+                'comment': review.comment or '',
+                'reviewer': (
+                    review.user.name
+                    if review.user and review.user.name
+                    else 'Customer'
+                ),
+                'verified_purchase': review.order_item_id is not None,
+                'created_at': (
+                    review.created_at.strftime('%b %d, %Y')
+                    if review.created_at
+                    else ''
+                ),
+            }
+            for review in ordered_reviews
+        ],
+    }
 
 
 @main.errorhandler(SQLAlchemyError)
@@ -58,6 +111,29 @@ def index():
         featured_brands=featured_brands,
         favorite_brand_ids=favorite_brand_ids,
     )
+
+
+@main.post('/newsletter/subscribe')
+def newsletter_subscribe():
+    email = (request.form.get('email') or '').strip().lower()
+    if (
+        len(email) > 254
+        or not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email)
+    ):
+        flash('Enter a valid email address to subscribe.', 'error')
+        return redirect(url_for('main.index'))
+
+    subscriber = NewsletterSubscriber(email=email)
+    db.session.add(subscriber)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        if NewsletterSubscriber.query.filter_by(email=email).first() is None:
+            raise
+
+    flash('Thanks for subscribing to the Regalia newsletter.', 'success')
+    return redirect(url_for('main.index'))
 
 
 @main.route('/login', methods=['GET', 'POST'])
@@ -173,11 +249,15 @@ def shopcollection(brand_id):
             selectinload(Product.images).selectinload(ProductImage.color),
             selectinload(Product.variants).selectinload(ProductVariant.color),
             selectinload(Product.variants).selectinload(ProductVariant.size),
+            selectinload(Product.reviews).joinedload(Review.user),
         )
     )
     products = db.session.scalars(stmt).all()
+    product_ids = [product.product_id for product in products]
     user_id = session.get('useronline')
     wishlisted_product_ids = set()
+    reviewed_product_ids = set()
+    review_order_item_ids = {}
     if user_id:
         wishlisted_product_ids = set(
             db.session.scalars(
@@ -186,6 +266,34 @@ def shopcollection(brand_id):
                 )
             ).all()
         )
+        reviewed_product_ids = set(
+            db.session.scalars(
+                db.select(Review.product_id).where(
+                    Review.user_id == user_id,
+                    Review.product_id.in_(product_ids),
+                )
+            ).all()
+        )
+        if product_ids:
+            eligible_order_items = (
+                db.session.query(OrderItem.itemproduct_id, OrderItem.orderitem_id)
+                .join(Order, Order.order_id == OrderItem.itemorder_id)
+                .join(Payment, Payment.paymentorder_id == Order.order_id)
+                .filter(
+                    Order.orderuser_id == user_id,
+                    Order.order_status != 'Cancelled',
+                    Payment.status == 'Completed',
+                    OrderItem.itemproduct_id.in_(product_ids),
+                )
+                .order_by(Order.order_date.desc(), OrderItem.orderitem_id.desc())
+                .all()
+            )
+            for product_id, order_item_id in eligible_order_items:
+                review_order_item_ids.setdefault(product_id, order_item_id)
+    product_review_summaries = {
+        product.product_id: _product_review_details(product)
+        for product in products
+    }
     product_details = [
         {
             'id': product.product_id,
@@ -194,6 +302,7 @@ def shopcollection(brand_id):
             'description': product.description or '',
             'status': product.status or '',
             'price': float(product.price) if product.price is not None else None,
+            **product_review_summaries[product.product_id],
             'images': [
                 {
                     'url': url_for('static', filename='media/' + image.image),
@@ -233,6 +342,15 @@ def shopcollection(brand_id):
         user=user,
         useronline=user_id,
         wishlisted_product_ids=wishlisted_product_ids,
+        reviewed_product_ids=reviewed_product_ids,
+        review_order_item_ids=review_order_item_ids,
+        product_review_summaries={
+            product_id: {
+                'average': summary['average_rating'],
+                'count': summary['review_count'],
+            }
+            for product_id, summary in product_review_summaries.items()
+        },
     )
 
 
@@ -303,10 +421,3 @@ def filter_collection_size(brand_id):
 def filter_collection_category(brand_id):
     return _filtered_collection_product_ids(brand_id)
 
-@main.route('/adduser')
-def addusers():
-    password = generate_password_hash('admin12345')
-    admin = Admin(name='Mr David',email='admin@gmail.com',password=password)
-    db.session.add(admin)
-    db.session.commit()
-    return 'Admin Added'
