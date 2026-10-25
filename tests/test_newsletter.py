@@ -93,7 +93,7 @@ class NewsletterSubscriptionTestCase(unittest.TestCase):
         self.assertIn('aria-label="Visit Twitter"', page)
         self.assertIn('class="newsletter-signup"', page)
         self.assertIn('action="/newsletter/subscribe"', page)
-        self.assertIn('style.css?v=2', page)
+        self.assertIn('style.css?v=3', page)
 
 
 if __name__ == '__main__':
