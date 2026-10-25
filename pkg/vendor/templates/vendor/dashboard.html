@@ -782,6 +782,48 @@
         .overview-grid { grid-template-columns: 1fr 1fr; }
         .dash-banner-left h1 { font-size: 1.3rem; }
     }
+
+    @media (max-width: 480px) {
+        .dash-banner {
+            padding: 18px 14px;
+            gap: 14px;
+        }
+
+        .dash-banner-actions {
+            width: 100%;
+        }
+
+        .dash-banner-actions .btn-dash-primary,
+        .dash-banner-actions .btn-dash-ghost {
+            flex: 1;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .overview-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dash-body {
+            padding: 16px 12px 40px;
+            gap: 20px;
+        }
+
+        .dash-card {
+            padding: 18px 14px;
+            border-radius: 12px;
+        }
+
+        .dash-modal-card {
+            width: calc(100vw - 20px);
+            border-radius: 12px;
+        }
+
+        .dash-modal-header, .dash-modal-body, .dash-modal-footer {
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+    }
 </style>
 
 <div class="vendor-dash-wrap">
