@@ -295,6 +295,52 @@ img, video {
     font-weight: 700;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--onyx);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-toggle:hover {
+    background: #f0f0f0;
+}
+
+.nav-toggle:focus-visible {
+    outline: 3px solid var(--lilac-ash);
+    outline-offset: 3px;
+}
+
+.nav-toggle svg {
+    color: var(--onyx);
+}
+
+.nav-toggle .icon-close {
+    display: none;
+}
+
+.nav-toggle.is-active .icon-hamburger {
+    display: none;
+}
+
+.nav-toggle.is-active .icon-close {
+    display: block;
+}
+
 
 .main {
     flex: 1;
@@ -732,26 +778,116 @@ img, video {
 }
 
 
-@media (max-width: 768px) {
+/* Tablet and Mobile Navigation Dropdown & Logo Icon-only */
+@media (max-width: 1024px) {
     .header {
-        padding: 14px 20px;
-        flex-wrap: wrap;
-        gap: 12px;
+        padding: 12px 24px;
+        min-height: 70px;
+        flex-wrap: nowrap;
         justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
-    .nav {
-        order: 3;
-        width: 100%;
+    /* Logo section displays ONLY the logo icon on mobile & tablet view */
+    .logo span {
+        display: none !important;
+    }
+
+    .logo {
+        padding: 4px;
+        gap: 0;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
         justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .logo img {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* Show hamburger toggle button */
+    .nav-toggle {
+        display: inline-flex;
+    }
+
+    /* Make nav bar a dropdown menu */
+    .nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #111212;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+        padding: 12px 20px 20px;
+        z-index: 99;
+    }
+
+    .nav.is-open {
+        display: block;
+        animation: navDropdownSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .nav ul {
-        gap: 20px;
-        flex-wrap: wrap;
-        justify-content: center;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+        list-style: none;
+        padding: 0;
+        margin: 0;
     }
 
+    .nav ul li {
+        width: 100%;
+    }
+
+    .nav ul a {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 12px 18px;
+        border-radius: 10px;
+        color: var(--white);
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-decoration: none;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .nav ul a:hover,
+    .nav ul a:focus {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--lilac-ash);
+        transform: translateX(4px);
+    }
+
+    .nav ul a:active {
+        background: rgba(255, 255, 255, 0.15);
+    }
+}
+
+@keyframes navDropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
     #shopheader {
         padding: 12px 20px;
         flex-wrap: wrap;
@@ -772,22 +908,22 @@ img, video {
 @media (max-width: 480px) {
     .header {
         padding: 10px 14px;
+        min-height: 60px;
+    }
+
+    .header-actions {
         gap: 8px;
     }
 
     .logo {
-        padding: 4px 12px 4px 6px;
-        gap: 6px;
+        width: 38px;
+        height: 38px;
+        padding: 3px;
     }
 
     .logo img {
         width: 32px;
         height: 32px;
-    }
-
-    .logo span strong {
-        font-size: 0.92rem;
-        letter-spacing: 1px;
     }
 
     .cart {
@@ -808,14 +944,23 @@ img, video {
         padding: 0 4px;
     }
 
-    .nav ul {
-        gap: 12px;
+    .nav-toggle {
+        width: 38px;
+        height: 38px;
+    }
+
+    .nav-toggle svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .nav {
+        padding: 10px 14px 16px;
     }
 
     .nav ul a {
-        font-size: 0.82rem;
-        letter-spacing: 0.3px;
-        padding: 4px 6px;
+        padding: 11px 14px;
+        font-size: 0.88rem;
     }
 
     #shopheader {

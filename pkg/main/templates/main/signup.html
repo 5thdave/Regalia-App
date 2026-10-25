@@ -36,9 +36,10 @@
                     <div class="form-group">
                         <label for="gender">Gender</label>
                         <select name="gender" id="gender">
-                            <option value="">select your gender</option>
-                            <option value="">male</option>
-                            <option value="">female</option>
+                            <option value="">Select your gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
 
@@ -54,7 +55,7 @@
 
                     <button type="submit" class="signup-btn">Sign Up</button>
                 </form>
-                <p class="switch">Already a member? <span><a href="login.html">login</a></span></p>
+                <p class="switch">Already a member? <span><a href="{{ url_for('main.login') }}">Log in</a></span></p>
             </div>
         </main>
         {% endblock %}

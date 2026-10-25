@@ -1,57 +1,141 @@
 <header class="header">
-    <a href="{{ url_for('user.user_home') if session.get('useronline') else url_for('main.index') }}" class="logo">
+    <a href="{{ url_for('user.user_home') if session.get('useronline') else url_for('main.index') }}" class="logo" aria-label="Regalia Home">
         <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Regalia Logo">
         <span><strong>REGALIA</strong></span>
     </a>
-    <nav class="nav" aria-label="Main Navigation">
+
+    <nav class="nav" id="main-nav" aria-label="Main Navigation">
         <ul>
             <li><a href="{{ url_for('user.user_home') if session.get('useronline') else url_for('main.index') }}">HOME</a></li>
             <li><a href="{{ (url_for('user.user_home') if session.get('useronline') else url_for('main.index')) + '#shopsample' }}">FEATURED BRANDS</a></li>
             <li><a href="{{ url_for('main.shop') }}">SHOP</a></li>
         </ul>
     </nav>
-    <div class="cart" role="button" aria-label="Shopping Cart and Profile" tabindex="0">
-        <div style="position: relative; display: inline-block;" id="profile-wrapper">
-            <a href="#" class="nav-icon-link" title="Account" id="profile-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4"></circle>
-                    <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path>
-                </svg>
-            </a>
-            <div id="profile-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background-color: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; z-index: 1000; min-width: 140px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                {% if session.get('useronline') %}
-                    <a href="{{ url_for('user.user_profile') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Profile</a>
-                    <a href="{{ url_for('user.logout') }}" style="display: block; padding: 8px 10px; color: #dc3545; text-decoration: none; font-size: 14px;">Logout</a>
-                {% elif session.get('brandonline') %}
-                    <a href="{{ url_for('vendor.vendor_dash') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Dashboard</a>
-                    <a href="{{ url_for('vendor.profile') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Profile</a>
-                    <a href="{{ url_for('user.logout') }}" style="display: block; padding: 8px 10px; color: #dc3545; text-decoration: none; font-size: 14px;">Logout</a>
-                {% else %}
-                    <a href="{{ url_for('main.login') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Login</a>
-                    <a href="{{ url_for('main.user_signup') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Sign Up</a>
-                    <a href="{{ url_for('vendor.register') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Vendor Register</a>
-                {% endif %}
+
+    <div class="header-actions">
+        <div class="cart" role="button" aria-label="Shopping Cart and Profile" tabindex="0">
+            <div style="position: relative; display: inline-block;" id="profile-wrapper">
+                <a href="#" class="nav-icon-link" title="Account" id="profile-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="8" r="4"></circle>
+                        <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path>
+                    </svg>
+                </a>
+                <div id="profile-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background-color: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; z-index: 1000; min-width: 140px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    {% if session.get('useronline') %}
+                        <a href="{{ url_for('user.user_profile') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Profile</a>
+                        <a href="{{ url_for('user.logout') }}" style="display: block; padding: 8px 10px; color: #dc3545; text-decoration: none; font-size: 14px;">Logout</a>
+                    {% elif session.get('brandonline') %}
+                        <a href="{{ url_for('vendor.vendor_dash') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Dashboard</a>
+                        <a href="{{ url_for('vendor.profile') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Profile</a>
+                        <a href="{{ url_for('user.logout') }}" style="display: block; padding: 8px 10px; color: #dc3545; text-decoration: none; font-size: 14px;">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('main.login') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Login</a>
+                        <a href="{{ url_for('main.user_signup') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Sign Up</a>
+                        <a href="{{ url_for('vendor.register') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Vendor Register</a>
+                    {% endif %}
+                </div>
             </div>
+
+            {% if request.endpoint in ['main.shopcollection', 'user.shopcollection'] %}
+            <button class="cart-toggle" id="cart-toggle" type="button" title="Cart"
+                    aria-label="Open shopping cart" aria-haspopup="dialog" aria-controls="cart-dialog">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+            </button>
+            {% else %}
+            <span title="Cart">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+            </span>
+            {% endif %}
+            <span class="cartcount" aria-label="Cart items count">0</span>
         </div>
 
-        {% if request.endpoint in ['main.shopcollection', 'user.shopcollection'] %}
-        <button class="cart-toggle" id="cart-toggle" type="button" title="Cart"
-                aria-label="Open shopping cart" aria-haspopup="dialog" aria-controls="cart-dialog">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="9" cy="21" r="1"></circle>
-                <circle cx="20" cy="21" r="1"></circle>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="main-nav">
+            <svg class="icon-hamburger" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            <svg class="icon-close" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
         </button>
-        {% else %}
-        <span title="Cart">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="9" cy="21" r="1"></circle>
-                <circle cx="20" cy="21" r="1"></circle>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-        </span>
-        {% endif %}
-        <span class="cartcount" aria-label="Cart items count">0</span>
     </div>
+
+    <script>
+        (function() {
+            const navToggle = document.getElementById('nav-toggle');
+            const mainNav = document.getElementById('main-nav');
+            const profileIcon = document.getElementById('profile-icon');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const profileWrapper = document.getElementById('profile-wrapper');
+
+            if (navToggle && mainNav) {
+                navToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isOpen = mainNav.classList.toggle('is-open');
+                    navToggle.classList.toggle('is-active', isOpen);
+                    navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                    if (isOpen && profileDropdown) {
+                        profileDropdown.style.display = 'none';
+                    }
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!mainNav.contains(e.target) && !navToggle.contains(e.target)) {
+                        mainNav.classList.remove('is-open');
+                        navToggle.classList.remove('is-active');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && mainNav.classList.contains('is-open')) {
+                        mainNav.classList.remove('is-open');
+                        navToggle.classList.remove('is-active');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navToggle.focus();
+                    }
+                });
+
+                mainNav.querySelectorAll('a').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        mainNav.classList.remove('is-open');
+                        navToggle.classList.remove('is-active');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                    });
+                });
+            }
+
+            if (profileIcon && profileDropdown) {
+                profileIcon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (mainNav && mainNav.classList.contains('is-open')) {
+                        mainNav.classList.remove('is-open');
+                        if (navToggle) {
+                            navToggle.classList.remove('is-active');
+                            navToggle.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                    profileDropdown.style.display = (profileDropdown.style.display === 'none' || profileDropdown.style.display === '') ? 'block' : 'none';
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (profileWrapper && !profileWrapper.contains(e.target)) {
+                        profileDropdown.style.display = 'none';
+                    }
+                });
+            }
+        })();
+    </script>
 </header>

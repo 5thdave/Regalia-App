@@ -1,4 +1,5 @@
 import re
+from datetime import date
 
 from flask import  Blueprint, abort, current_app, flash, jsonify, render_template, request, redirect,url_for,  session
 from sqlalchemy import and_, func, or_
@@ -170,32 +171,53 @@ def login():
 @main.route('/signup', methods=['GET', 'POST'])
 def user_signup():
     if request.method == 'POST':
-        name = request.form.get('username')
-        email = request.form.get('email')
-        gender = request.form.get('gender')
-        dob = request.form.get('dob')
-        phone = request.form.get('phone')
-        address = request.form.get('address')
-        password = request.form.get('password')
-        confirmpass = request.form.get('confirmpassword')
-        if password and password == confirmpass:
-            password_hash = generate_password_hash(password)
-            user = User(
-                name=name,
-                gender=gender,
-                email=email,
-                dateofbirth=dob,
-                phone=phone,
-                country="Nigeria",
-                address=address,
-                password=password_hash
-            )
-            db.session.add(user)
-            db.session.commit()
-            flash('Your account has been created. Please log in.', 'success')
-            return redirect(url_for('main.login'))
-        flash('Passwords must match.', 'error')
-        return render_template('main/signup.html')
+        name = (request.form.get('username') or '').strip()
+        email = (request.form.get('email') or '').strip().lower()
+        gender = request.form.get('gender') or None
+        dob_value = request.form.get('dob') or ''
+        phone = (request.form.get('phone') or '').strip()
+        address = (request.form.get('address') or '').strip()
+        password = request.form.get('password') or ''
+        confirmpass = request.form.get('confirmpassword') or ''
+
+        if not name or not email or not phone or not dob_value or not password:
+            flash('Please complete all required fields.', 'error')
+        elif gender not in (None, 'Male', 'Female', 'Other'):
+            flash('Select a valid gender.', 'error')
+        elif len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'error')
+        elif password != confirmpass:
+            flash('Passwords must match.', 'error')
+        elif User.query.filter_by(email=email).first():
+            flash('An account with that email already exists. Please log in.', 'error')
+        else:
+            try:
+                dob = date.fromisoformat(dob_value)
+            except ValueError:
+                flash('Enter a valid date of birth.', 'error')
+            else:
+                user = User(
+                    name=name,
+                    gender=gender,
+                    email=email,
+                    dateofbirth=dob,
+                    phone=phone,
+                    country='Nigeria',
+                    address=address or None,
+                    password=generate_password_hash(password),
+                )
+                db.session.add(user)
+                try:
+                    db.session.commit()
+                except IntegrityError:
+                    db.session.rollback()
+                    if User.query.filter_by(email=email).first() is None:
+                        raise
+                    flash('An account with that email already exists. Please log in.', 'error')
+                else:
+                    flash('Your account has been created. Please log in.', 'success')
+                    return redirect(url_for('main.login'))
+
     return render_template('main/signup.html')
 
 
@@ -420,4 +442,3 @@ def filter_collection_size(brand_id):
 @main.get('/shopcollection/<int:brand_id>/filter/category')
 def filter_collection_category(brand_id):
     return _filtered_collection_product_ids(brand_id)
-
