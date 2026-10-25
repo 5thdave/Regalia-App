@@ -1430,6 +1430,45 @@ img, video {
     border-color: rgba(0, 0, 0, 0.14);
 }
 
+.profile-dropdown ul{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    height: auto;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.profile-dropdown li{
+    width: 100%;
+}
+
+.profile-dropdown > a,
+.profile-dropdown li a{
+    display: block;
+    width: 100%;
+    text-decoration: none;
+    color: #333;
+    padding: 9px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.profile-dropdown a:hover,
+.profile-dropdown a:focus-visible{
+    background-color: #f3effa;
+    color: #5b3a78;
+    transform: translateX(2px);
+}
+
+.profile-dropdown a:focus-visible{
+    outline: 2px solid #5b3a78;
+    outline-offset: 1px;
+}
+
 .btn-fav-toggle {
     position: absolute;
     top: 14px;

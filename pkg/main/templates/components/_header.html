@@ -15,24 +15,26 @@
     <div class="header-actions">
         <div class="cart" role="button" aria-label="Shopping Cart and Profile" tabindex="0">
             <div style="position: relative; display: inline-block;" id="profile-wrapper">
-                <a href="#" class="nav-icon-link" title="Account" id="profile-icon">
+                <a href="#" class="nav-icon-link" title="Account" id="profile-icon" aria-haspopup="true" aria-expanded="false">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <circle cx="12" cy="8" r="4"></circle>
                         <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path>
                     </svg>
                 </a>
-                <div id="profile-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background-color: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; z-index: 1000; min-width: 140px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div id="profile-dropdown" class="profile-dropdown" style="display: none; position: absolute; top: calc(100% + 14px); right: 0; background-color: #fff; border: 1px solid #e5e7eb; padding: 8px; border-radius: 10px; z-index: 1000; min-width: 150px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
                     {% if session.get('useronline') %}
-                        <a href="{{ url_for('user.user_profile') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Profile</a>
-                        <a href="{{ url_for('user.logout') }}" style="display: block; padding: 8px 10px; color: #dc3545; text-decoration: none; font-size: 14px;">Logout</a>
+                        <a href="{{ url_for('user.user_profile') }}">Profile</a>
+                        <a href="{{ url_for('user.logout') }}" class="profile-logout-link">Logout</a>
                     {% elif session.get('brandonline') %}
-                        <a href="{{ url_for('vendor.vendor_dash') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Dashboard</a>
-                        <a href="{{ url_for('vendor.profile') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Profile</a>
-                        <a href="{{ url_for('user.logout') }}" style="display: block; padding: 8px 10px; color: #dc3545; text-decoration: none; font-size: 14px;">Logout</a>
+                        <a href="{{ url_for('vendor.vendor_dash') }}">Dashboard</a>
+                        <a href="{{ url_for('vendor.profile') }}">Profile</a>
+                        <a href="{{ url_for('user.logout') }}" class="profile-logout-link">Logout</a>
                     {% else %}
-                        <a href="{{ url_for('main.login') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Login</a>
-                        <a href="{{ url_for('main.user_signup') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Sign Up</a>
-                        <a href="{{ url_for('vendor.register') }}" style="display: block; padding: 8px 10px; color: #333; text-decoration: none; font-size: 14px;">Vendor Register</a>
+                        <ul>
+                            <li><a href="{{ url_for('main.login') }}">Login</a></li>
+                            <li><a href="{{ url_for('main.user_signup') }}">Sign Up</a></li>
+                            <li><a href="{{ url_for('vendor.register') }}">Vendor Register</a></li>
+                        </ul>
                     {% endif %}
                 </div>
             </div>
@@ -79,31 +81,17 @@
             const profileDropdown = document.getElementById('profile-dropdown');
             const profileWrapper = document.getElementById('profile-wrapper');
 
+            // --- Mobile Nav Dropdown ---
             if (navToggle && mainNav) {
                 navToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
                     e.stopPropagation();
                     const isOpen = mainNav.classList.toggle('is-open');
                     navToggle.classList.toggle('is-active', isOpen);
                     navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
                     if (isOpen && profileDropdown) {
                         profileDropdown.style.display = 'none';
-                    }
-                });
-
-                document.addEventListener('click', function(e) {
-                    if (!mainNav.contains(e.target) && !navToggle.contains(e.target)) {
-                        mainNav.classList.remove('is-open');
-                        navToggle.classList.remove('is-active');
-                        navToggle.setAttribute('aria-expanded', 'false');
-                    }
-                });
-
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && mainNav.classList.contains('is-open')) {
-                        mainNav.classList.remove('is-open');
-                        navToggle.classList.remove('is-active');
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navToggle.focus();
+                        if (profileIcon) profileIcon.setAttribute('aria-expanded', 'false');
                     }
                 });
 
@@ -116,10 +104,14 @@
                 });
             }
 
+            // --- Profile Dropdown Toggle ---
             if (profileIcon && profileDropdown) {
                 profileIcon.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    // If mobile nav is open, close it
                     if (mainNav && mainNav.classList.contains('is-open')) {
                         mainNav.classList.remove('is-open');
                         if (navToggle) {
@@ -127,15 +119,50 @@
                             navToggle.setAttribute('aria-expanded', 'false');
                         }
                     }
-                    profileDropdown.style.display = (profileDropdown.style.display === 'none' || profileDropdown.style.display === '') ? 'block' : 'none';
-                });
 
-                document.addEventListener('click', function(e) {
-                    if (profileWrapper && !profileWrapper.contains(e.target)) {
+                    const isCurrentlyOpen = profileDropdown.style.display === 'flex';
+                    if (isCurrentlyOpen) {
                         profileDropdown.style.display = 'none';
+                        profileIcon.setAttribute('aria-expanded', 'false');
+                    } else {
+                        profileDropdown.style.display = 'flex';
+                        profileIcon.setAttribute('aria-expanded', 'true');
                     }
                 });
             }
+
+            // --- Global click outside & Escape key listeners ---
+            document.addEventListener('click', function(e) {
+                if (profileDropdown && profileWrapper && !profileWrapper.contains(e.target)) {
+                    profileDropdown.style.display = 'none';
+                    if (profileIcon) profileIcon.setAttribute('aria-expanded', 'false');
+                }
+                if (mainNav && navToggle && !mainNav.contains(e.target) && !navToggle.contains(e.target)) {
+                    mainNav.classList.remove('is-open');
+                    navToggle.classList.remove('is-active');
+                    navToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (profileDropdown && profileDropdown.style.display === 'flex') {
+                        profileDropdown.style.display = 'none';
+                        if (profileIcon) {
+                            profileIcon.setAttribute('aria-expanded', 'false');
+                            profileIcon.focus();
+                        }
+                    }
+                    if (mainNav && mainNav.classList.contains('is-open')) {
+                        mainNav.classList.remove('is-open');
+                        if (navToggle) {
+                            navToggle.classList.remove('is-active');
+                            navToggle.setAttribute('aria-expanded', 'false');
+                            navToggle.focus();
+                        }
+                    }
+                }
+            });
         })();
     </script>
 </header>

@@ -30,25 +30,6 @@
 
         {% include "components/_footer.html" %}
     </div>
-    {% block script %}
-    <script>
-        const profileIcon = document.getElementById('profile-icon');
-        const profileDropdown = document.getElementById('profile-dropdown');
-
-        if (profileIcon && profileDropdown) {
-            profileIcon.addEventListener('click', function(e) {
-                e.preventDefault();
-                profileDropdown.style.display = (profileDropdown.style.display === 'none' || profileDropdown.style.display === '') ? 'block' : 'none';
-            });
-
-            document.addEventListener('click', function(e) {
-                const wrapper = document.getElementById('profile-wrapper');
-                if (wrapper && !wrapper.contains(e.target)) {
-                    profileDropdown.style.display = 'none';
-                }
-            });
-        }
-    </script>
-    {% endblock %}
+    {% block script %}{% endblock %}
 </body>
 </html>
