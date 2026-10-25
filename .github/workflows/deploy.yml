@@ -44,7 +44,8 @@ jobs:
           script: |
             set -e
             cd /home/ubuntu/app
-            git pull origin main
+            git restore -- requirements.txt
+            git pull --ff-only origin main
             source venv/bin/activate
             pip install -r requirements.txt
             sudo systemctl restart myapp
