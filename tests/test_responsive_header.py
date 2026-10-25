@@ -51,10 +51,13 @@ class ResponsiveHeaderTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         css = response.get_data(as_text=True)
 
-        # Tablet/mobile breakpoint hides text and sets logo icon
-        self.assertIn('.logo span', css)
+        # Non-mobile view sets nav-toggle display: none !important
+        self.assertIn('.nav-toggle', css)
         self.assertIn('display: none !important', css)
+
+        # Mobile view breakpoint (max-width: 768px)
+        self.assertIn('@media (max-width: 768px)', css)
+        self.assertIn('.logo span', css)
 
         # Nav becomes dropdown menu
         self.assertIn('.nav.is-open', css)
-        self.assertIn('.nav-toggle', css)

@@ -302,7 +302,7 @@ img, video {
 }
 
 .nav-toggle {
-    display: none;
+    display: none !important;
     align-items: center;
     justify-content: center;
     width: 44px;
@@ -778,11 +778,39 @@ img, video {
 }
 
 
-/* Tablet and Mobile Navigation Dropdown & Logo Icon-only */
-@media (max-width: 1024px) {
+/* Non-mobile view: nav-toggle is display none */
+@media (min-width: 769px) {
+    .nav-toggle {
+        display: none !important;
+    }
+
+    .nav {
+        display: flex !important;
+        position: static;
+        width: auto;
+        background: transparent;
+        padding: 0;
+        box-shadow: none;
+        border: none;
+    }
+
+    .nav ul {
+        display: flex;
+        flex-direction: row;
+        gap: 32px;
+        align-items: center;
+    }
+
+    .logo span {
+        display: inline !important;
+    }
+}
+
+/* Mobile view: nav-toggle is displayed and nav bar is a dropdown menu */
+@media (max-width: 768px) {
     .header {
-        padding: 12px 24px;
-        min-height: 70px;
+        padding: 12px 20px;
+        min-height: 68px;
         flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
@@ -791,7 +819,7 @@ img, video {
         z-index: 100;
     }
 
-    /* Logo section displays ONLY the logo icon on mobile & tablet view */
+    /* Logo section displays ONLY the logo icon on mobile view */
     .logo span {
         display: none !important;
     }
@@ -811,12 +839,12 @@ img, video {
         height: 36px;
     }
 
-    /* Show hamburger toggle button */
+    /* Show hamburger toggle button ONLY in mobile view */
     .nav-toggle {
-        display: inline-flex;
+        display: inline-flex !important;
     }
 
-    /* Make nav bar a dropdown menu */
+    /* Make nav bar a dropdown menu in mobile view */
     .nav {
         display: none;
         position: absolute;
@@ -832,7 +860,7 @@ img, video {
     }
 
     .nav.is-open {
-        display: block;
+        display: block !important;
         animation: navDropdownSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
@@ -874,20 +902,7 @@ img, video {
     .nav ul a:active {
         background: rgba(255, 255, 255, 0.15);
     }
-}
 
-@keyframes navDropdownSlide {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@media (max-width: 768px) {
     #shopheader {
         padding: 12px 20px;
         flex-wrap: wrap;
@@ -902,6 +917,17 @@ img, video {
         width: 150px;
         height: 150px;
         padding: 14px;
+    }
+}
+
+@keyframes navDropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
