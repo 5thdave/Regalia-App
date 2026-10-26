@@ -3,92 +3,57 @@
 
 {% block content %}
 <style>
-    .auth-tabs {
-        display: flex;
-        width: 100%;
-        background: #f0f0f0;
-        border-radius: 25px;
-        padding: 4px;
-        margin-bottom: 22px;
-        gap: 4px;
+    .login-card { width: min(100% - 2rem, 440px); }
+    .login-card h2 { margin-bottom: 1.5rem; text-align: center; }
+    .login-card .form-group { margin-bottom: 1.1rem; }
+    .login-card .form-group input { min-height: 46px; }
+    .login-card form[hidden] { display: none !important; }
+    .auth-tabs { margin-bottom: 1.5rem; }
+    .auth-tab:focus-visible {
+        outline: 2px solid var(--onyx, #111212);
+        outline-offset: 2px;
     }
-
-    .auth-tab {
-        flex: 1;
-        padding: 10px 16px;
-        border: none;
-        background: transparent;
-        border-radius: 21px;
-        font-size: 0.95rem;
-        font-family: inherit;
-        font-weight: 600;
-        color: var(--dim-gray, #716969);
-        cursor: pointer;
-        transition: all 0.25s ease;
-        text-align: center;
-    }
-
-    .auth-tab:hover {
-        color: var(--onyx, #0F0F0F);
-    }
-
-    .auth-tab.active {
-        background: #111212;
-        color: var(--white, #FBFBFB);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
     .login-subtext {
-        font-size: 0.9rem;
-        color: var(--dim-gray, #716969);
-        margin-top: -16px;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .switch {
-        font-size: 0.9rem;
+        margin: -1rem 0 1.5rem;
         color: var(--dim-gray, #716969);
         text-align: center;
-        margin-top: 12px;
     }
-
-    .switch span a {
-        color: var(--onyx, #0F0F0F);
-        font-weight: 600;
-        text-decoration: underline;
-        text-underline-offset: 3px;
-        transition: color 0.2s ease;
-    }
-
-    .switch span a:hover {
-        color: var(--lilac-ash, #BCABAE);
+    .login-card .switch { margin-top: 1.25rem; }
+    @media (max-width: 480px) {
+        .login-card { padding: 1.5rem 1.25rem; }
+        .auth-tab { padding: 0.7rem 0.5rem; }
     }
 </style>
 
 <main class="main signupmain">
     <div class="signup-card login-card">
-        <h2>Login</h2>
-        <p class="login-subtext">Sign in to your account</p>
+        <h2>Welcome back</h2>
+        <p class="login-subtext">Sign in to your Regalia account</p>
 
-        <!-- Account Type Switcher Tabs -->
-        <div class="auth-tabs" role="tablist" aria-label="Login Options">
-            <button type="button" class="auth-tab {% if request.endpoint != 'vendor.brand_login' %}active{% endif %}" id="userTabBtn" role="tab" aria-selected="{% if request.endpoint != 'vendor.brand_login' %}true{% else %}false{% endif %}">
+        <div class="auth-tabs" role="tablist" aria-label="Choose account type">
+            <button type="button" class="auth-tab {% if selected_login_type != 'brand' %}active{% endif %}"
+                    id="userTabBtn" role="tab" aria-controls="userLoginForm"
+                    aria-selected="{{ 'true' if selected_login_type != 'brand' else 'false' }}"
+                    tabindex="{{ '0' if selected_login_type != 'brand' else '-1' }}">
                 User
             </button>
-            <button type="button" class="auth-tab {% if request.endpoint == 'vendor.brand_login' %}active{% endif %}" id="brandTabBtn" role="tab" aria-selected="{% if request.endpoint == 'vendor.brand_login' %}true{% else %}false{% endif %}">
+            <button type="button" class="auth-tab {% if selected_login_type == 'brand' %}active{% endif %}"
+                    id="brandTabBtn" role="tab" aria-controls="brandLoginForm"
+                    aria-selected="{{ 'true' if selected_login_type == 'brand' else 'false' }}"
+                    tabindex="{{ '0' if selected_login_type == 'brand' else '-1' }}">
                 Brand
             </button>
         </div>
 
-        <!-- User Login Form -->
-        <form id="userLoginForm" action="" method="POST" class="signup-form">
+        <form id="userLoginForm" action="{{ url_for('main.login') }}" method="POST"
+              class="signup-form" role="tabpanel" aria-labelledby="userTabBtn"
+              {% if selected_login_type == 'brand' %}hidden{% endif %}>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="login_type" value="user">
 
             <div class="form-group">
                 <label for="user_email">Email</label>
-                <input type="email" id="user_email" name="email" placeholder="email" autocomplete="email" required>
+                <input type="email" id="user_email" name="email" placeholder="Email address" autocomplete="email" required>
             </div>
 
             <div class="form-group">
@@ -96,18 +61,19 @@
                 <input type="password" id="user_password" name="password" placeholder="Password" minlength="8" autocomplete="current-password" required>
             </div>
 
-            <button type="submit" class="signup-btn">Login as User</button>
-            <p class="switch">New here? <span><a href="{{ url_for('main.user_signup') }}">create account</a></span></p>
+            <button type="submit" class="signup-btn">Sign in</button>
+            <p class="switch">New to Regalia? <span><a href="{{ url_for('main.user_signup') }}">Create an account</a></span></p>
         </form>
 
-        <!-- Brand Login Form -->
-        <form id="brandLoginForm" action="" method="POST" class="signup-form" >
+        <form id="brandLoginForm" action="{{ url_for('main.login') }}" method="POST"
+              class="signup-form" role="tabpanel" aria-labelledby="brandTabBtn"
+              {% if selected_login_type != 'brand' %}hidden{% endif %}>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="login_type" value="brand">
 
             <div class="form-group">
                 <label for="brand_email">Email</label>
-                <input type="email" id="brand_email" name="email" placeholder="email" autocomplete="email" required>
+                <input type="email" id="brand_email" name="email" placeholder="Brand email address" autocomplete="email" required>
             </div>
 
             <div class="form-group">
@@ -115,8 +81,8 @@
                 <input type="password" id="brand_password" name="password" placeholder="Password" minlength="8" autocomplete="current-password" required>
             </div>
 
-            <button type="submit" class="signup-btn">Login as Brand</button>
-            <p class="switch">New brand? <span><a href="{{ url_for('vendor.register') }}">register your brand</a></span></p>
+            <button type="submit" class="signup-btn">Sign in as a brand</button>
+            <p class="switch">New brand? <span><a href="{{ url_for('vendor.register') }}">Register your brand</a></span></p>
         </form>
     </div>
 </main>
@@ -124,40 +90,47 @@
 
 {% block script %}
 <script>
-    const userTabBtn = document.getElementById("userTabBtn");
-    const brandTabBtn = document.getElementById("brandTabBtn");
-    const userLoginForm = document.getElementById("userLoginForm");
-    const brandLoginForm = document.getElementById("brandLoginForm");
+    (function () {
+        const tabs = [
+            { button: document.getElementById("userTabBtn"), form: document.getElementById("userLoginForm"), type: "user" },
+            { button: document.getElementById("brandTabBtn"), form: document.getElementById("brandLoginForm"), type: "brand" }
+        ];
 
-    function showUserTab() {
-        userTabBtn.classList.add("active");
-        userTabBtn.setAttribute("aria-selected", "true");
-        brandTabBtn.classList.remove("active");
-        brandTabBtn.setAttribute("aria-selected", "false");
+        function selectTab(selected, focusButton) {
+            tabs.forEach(function (tab) {
+                const isSelected = tab === selected;
+                tab.button.classList.toggle("active", isSelected);
+                tab.button.setAttribute("aria-selected", String(isSelected));
+                tab.button.tabIndex = isSelected ? 0 : -1;
+                tab.form.hidden = !isSelected;
+            });
+            if (focusButton) selected.button.focus();
+        }
 
-        userLoginForm.style.display = "flex";
-        brandLoginForm.style.display = "none";
-    }
+        tabs.forEach(function (tab, index) {
+            tab.button.addEventListener("click", function () {
+                selectTab(tab, false);
+            });
+            tab.button.addEventListener("keydown", function (event) {
+                if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    const nextIndex = (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+                    selectTab(tabs[nextIndex], true);
+                }
+            });
+        });
 
-    function showBrandTab() {
-        brandTabBtn.classList.add("active");
-        brandTabBtn.setAttribute("aria-selected", "true");
-        userTabBtn.classList.remove("active");
-        userTabBtn.setAttribute("aria-selected", "false");
-
-        brandLoginForm.style.display = "flex";
-        userLoginForm.style.display = "none";
-    }
-
-    userTabBtn.addEventListener("click", showUserTab);
-    brandTabBtn.addEventListener("click", showBrandTab);
-
-    // Support deep-linking with #brand or query param ?type=brand or ?role=brand
-    const params = new URLSearchParams(window.location.search);
-    if (window.location.hash === "#brand" || params.get("type") === "brand" || params.get("role") === "brand") {
-        showBrandTab();
-    } else if (window.location.hash === "#user" || params.get("type") === "user" || params.get("role") === "user") {
-        showUserTab();
-    }
+        const params = new URLSearchParams(window.location.search);
+        const requestedType = window.location.hash === "#brand" ||
+            params.get("type") === "brand" || params.get("role") === "brand"
+            ? "brand"
+            : window.location.hash === "#user" ||
+                params.get("type") === "user" || params.get("role") === "user"
+                ? "user"
+                : null;
+        if (requestedType) {
+            selectTab(tabs.find(function (tab) { return tab.type === requestedType; }), false);
+        }
+    })();
 </script>
 {% endblock %}

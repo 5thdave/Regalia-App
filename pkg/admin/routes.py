@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from flask_mail import Message
+from pkg.extensions import mail
 import re
 
 from flask import Blueprint, flash, render_template, request, redirect, url_for, session
@@ -9,6 +11,7 @@ from pkg.models import (
     db,
     Admin,
     Brand,
+    BrandLogo,
     User,
     Category,
     Color,
@@ -49,7 +52,7 @@ def login():
         password = request.form.get('password', '')
         admin_user = Admin.query.filter_by(email=email).first()
 
-        if admin_user and check_password_hash(admin_user.password, password):
+        if admin_user and check_password_hash(admin_user.password,password):
             session.clear()
             session['admin_id'] = admin_user.id
             session['role'] = 'admin'
@@ -101,11 +104,116 @@ def brands():
             Brand.brand_email.ilike(f'%{search}%'),
             Brand.brand_phone.ilike(f'%{search}%'),
         ))
+    brand_list = brand_query.all()
+    brand_logos = {
+        logo.brand_id: logo.logo
+        for logo in BrandLogo.query.filter(
+            BrandLogo.brand_id.in_([brand.brand_id for brand in brand_list])
+        ).all()
+    } if brand_list else {}
     return render_template(
         'admin/brands.html',
-        brands=brand_query.all(),
+        brands=brand_list,
+        brand_logos=brand_logos,
+        brand_statuses=['Pending', 'Approved', 'Rejected'],
         search=search,
     )
+
+
+@admin.route('/brands/<int:brand_id>/status', methods=['POST'])
+def update_brand_status(brand_id):
+    new_status = request.form.get('status', '')
+    if new_status not in {'Pending', 'Approved', 'Rejected'}:
+        flash('Choose a valid brand status.', 'error')
+        return redirect(url_for('admin.brands'))
+
+    brand = db.get_or_404(Brand, brand_id)
+    brand.status = new_status
+    db.session.commit()
+    msg = None
+    if new_status == 'Approved':
+        brand_email = brand.brand_email
+        msg = Message(subject='Registration Approved',sender='fayosedavid@20gmail.com',recipients=[brand_email])
+        msg.body = f"""Hi Regalia Team,
+
+            Great news! Your brand has been approved to sell on Regalia.
+
+            You can now sign in to your vendor dashboard to:
+            - Set up your brand profile
+            - Add and manage your products
+            - Start receiving orders
+
+
+            If you need any help getting started, reach us at {msg.sender}.
+
+            Welcome aboard,
+            The Regalia Team
+            """
+
+        msg.html = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 560px; margin: auto; color: #333;">
+            <h2 style="color: #2c5282;">You're approved, {brand.brand_name}! 🎉</h2>
+            <p>Great news! Your brand has been <strong>approved to sell</strong> on Regalia.</p>
+
+            <div style="background: #f7fafc; border-left: 4px solid #2c5282; padding: 12px 16px; margin: 20px 0;">
+                <strong>You can now:</strong>
+                <ul style="margin: 8px 0 0 18px; padding: 0;">
+                <li>Set up your brand profile</li>
+                <li>Add and manage your products</li>
+                <li>Start receiving orders</li>
+                </ul>
+            </div>
+
+            <p style="font-size: 13px; color: #666;">
+                Need help getting started? Contact us at
+                <a href="mailto:{msg.sender}">{msg.sender}</a>.
+            </p>
+
+            <p>Welcome aboard,<br>The Regalia Team</p>
+            </div>
+            """
+    if new_status == 'Rejected':
+        brand_email = brand.brand_email
+        msg = Message(subject='Update on your account regiatration',sender='fayosedavid@20gmail.com',recipients=[brand_email])
+        msg.body = f"""Hi {brand.brand_name} Team,
+
+            Thank you for your interest in selling on Regalia and for the time you put into your application.
+
+            After reviewing your brand's details, we're unable to approve {brand.brand_name} to sell on our platform at this time.
+
+            This is as a result of your brand not meeting the neccessary requirements
+
+            This decision isn't necessarily final. If you believe there was a mistake, or you'd like to address the points above and apply again, you can do so here:
+
+            If you have any questions, reach us at {msg.sender}.
+
+            Thank you again for your interest,
+            The Regalia Team
+            """
+
+        msg.html = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 560px; margin: auto; color: #333;">
+            <h2 style="color: #2c5282;">Update on your application</h2>
+            <p>Hi {brand.brand_name} Team,</p>
+            <p>Thank you for your interest in selling on Regalia and for the time you put into your application.</p>
+            <p>After reviewing your brand's details, we're unable to approve <strong>{brand.brand_name}</strong> to sell on our platform at this time.</p>
+            <p>This is as a result of your brand not meeting the neccessary requirements</p>
+            <p>This decision isn't necessarily final. If you believe there was a mistake, or you'd like to address the points above and apply again, you're welcome to reapply.</p>
+
+
+            <p style="font-size: 13px; color: #666;">
+                Questions? Contact us at <a href="mailto:{msg.sender}">fayosedavid20@gmail.com</a>.
+            </p>
+
+            <p>Thank you again for your interest,<br>The Regalia Team</p>
+            </div>
+            """
+    if msg is not None:
+        mail.send(msg)
+
+    flash('Brand status updated.', 'success')
+    return redirect(url_for('admin.brands'))
+
 
 @admin.route('/orders')
 def orders():

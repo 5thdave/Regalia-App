@@ -39,6 +39,28 @@ class UserSignupTestCase(unittest.TestCase):
         self.assertIn(f'value="{self.state.state_id}"'.encode(), response.data)
         self.assertIn(b'Lagos</option>', response.data)
 
+    def test_login_form_selects_brand_tab_from_query_parameter(self):
+        response = self.client.get('/login?type=brand')
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertRegex(page, r'id="brandTabBtn"[^>]*aria-selected="true"')
+        self.assertRegex(page, r'id="userLoginForm"[^>]*hidden')
+
+    def test_failed_brand_login_keeps_brand_tab_selected(self):
+        response = self.client.post('/login', data={
+            'login_type': 'brand',
+            'email': 'brand@example.com',
+            'password': 'wrong-password',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRegex(
+            response.get_data(as_text=True),
+            r'id="brandTabBtn"[^>]*aria-selected="true"',
+        )
+        self.assertIn(b'Invalid email or password.', response.data)
+
     def tearDown(self):
         db.session.remove()
         db.drop_all()

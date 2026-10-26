@@ -100,7 +100,7 @@ def user_home():
     featured_brands = (
         db.session.query(Brand, BrandLogo.logo)
         .join(BrandLogo, BrandLogo.brand_id == Brand.brand_id)
-        .filter(BrandLogo.logo.isnot(None), BrandLogo.logo != '')
+        .filter(Brand.status == 'Approved',BrandLogo.logo.isnot(None), BrandLogo.logo != '')
         .all()
     )
     user_id = session.get('useronline')

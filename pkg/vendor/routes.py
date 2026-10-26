@@ -226,6 +226,15 @@ def upload():
         flash("Please log in as a brand to upload products.", "error")
         return redirect(url_for('main.login'))
 
+    brand = db.session.get(Brand, brand_id)
+    if brand is None:
+        session.pop('brandonline', None)
+        flash("Your brand account could not be found. Please log in again.", "error")
+        return redirect(url_for('main.login'))
+    if brand.status != 'Approved':
+        flash("Your brand must be approved before you can upload products.", "error")
+        return redirect(url_for('main.login'))
+
     if request.method == 'POST':
         product_name = (request.form.get('product_name') or '').strip()
         description = (request.form.get('description') or '').strip()
@@ -528,7 +537,25 @@ def vendor_dash():
 
 @vendor.route('/profile')
 def profile():
-    if session.get('brandonline') is not None:
-        return render_template('vendor/profile.html')
-    flash("Please log in as a brand to view your profile.", "error")
-    return redirect(url_for('main.login'))
+    brand_id = session.get('brandonline')
+    if not brand_id:
+        flash("Please log in as a brand to view your profile.", "error")
+        return redirect(url_for('main.login'))
+
+    brand = db.session.get(Brand, brand_id)
+    if brand is None:
+        session.pop('brandonline', None)
+        flash("Your brand account could not be found. Please log in again.", "error")
+        return redirect(url_for('main.login'))
+
+    brand_logo = BrandLogo.query.filter_by(brand_id=brand_id).first()
+    logo_url = (
+        url_for('static', filename='media/brandlogos/' + brand_logo.logo)
+        if brand_logo and brand_logo.logo
+        else None
+    )
+    return render_template(
+        'vendor/profile.html',
+        brand=brand,
+        logo_url=logo_url,
+    )

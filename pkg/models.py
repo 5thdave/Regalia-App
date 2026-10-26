@@ -46,6 +46,7 @@ class Brand(db.Model):
     brand_phone = db.Column(db.String(45))
     brand_desc = db.Column(db.Text)
     password = db.Column(db.String(255))
+    status = db.Column(db.String(20), nullable=False, default='Pending', server_default='Pending')
     # Relationships
     products = db.relationship('Product', backref='brand', lazy=True)
     payouts = db.relationship('Payout', backref='brand', lazy=True)

@@ -3,7 +3,7 @@
 {% block title %}Regalia | Shop{% endblock %}
 
 {% block content %}
-<main class="main">
+<main class="main shop-page">
     <div id="shopheader">
         <div id="shop">
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -26,7 +26,7 @@
     </div>
 
     <section id="branddisplay" aria-label="Brands catalog">
-        {% for brand in brands %}
+        {% for brand, logo in brands %}
             <div class="branddisplaydiv">
                 {% if useronline %}
                     <form method="post" action="{{ url_for('user.toggle_favorite', brand_id=brand.brand_id) }}">
@@ -45,10 +45,8 @@
                         </svg>
                     </a>
                 {% endif %}
-                <a href="{{ url_for('main.shopcollection', brand_id=brand.brand_id) }}">
-                    {% if brand_logos.get(brand.brand_id) %}
-                        <img src="{{ url_for('static', filename='media/brandlogos/' ~ brand_logos[brand.brand_id]) }}" alt="{{ brand.brand_name }} Logo" title="{{ brand.brand_name }}">
-                    {% endif %}
+                <a href="{{ url_for('main.shopcollection', brand_id=brand.brand_id) }}" aria-label="Shop {{ brand.brand_name }}">
+                    <img src="{{ url_for('static', filename='media/brandlogos/' ~ logo) }}" alt="{{ brand.brand_name }} Logo" title="{{ brand.brand_name }}">
                 </a>
             </div>
         {% else %}

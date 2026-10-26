@@ -351,6 +351,11 @@ img, video {
     align-items: center;
 }
 
+.main.shop-page {
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
 .signupmain {
     padding: 60px 20px;
     min-height: calc(100vh - 160px);

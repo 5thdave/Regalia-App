@@ -21,20 +21,168 @@
                 <th>Brand Name</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for brand in brands %}
             <tr>
-                <td>{{brand.brand_id}}</td>
-                <td>{{brand.brand_name or '—'}}</td>
-                <td>{{brand.brand_email or '—'}}</td>
-                <td>{{brand.brand_phone or '—'}}</td>
+                <td>{{ brand.brand_id }}</td>
+                <td>{{ brand.brand_name or '—' }}</td>
+                <td>{{ brand.brand_email or '—' }}</td>
+                <td>{{ brand.brand_phone or '—' }}</td>
+                <td><span class="badge badge-{{ (brand.status or 'Pending')|lower }}">{{ brand.status or 'Pending' }}</span></td>
+                <td>
+                    <button class="btn-primary brand-view-button" type="button"
+                            data-modal-target="brand-modal-{{ brand.brand_id }}"
+                            aria-haspopup="dialog">
+                        View
+                    </button>
+                </td>
             </tr>
             {% else %}
-            <tr><td colspan="4" style="text-align:center; padding:2rem; color:#6b7280;">No brands match your search.</td></tr>
+            <tr><td colspan="6" style="text-align:center; padding:2rem; color:#6b7280;">No brands match your search.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+{% for brand in brands %}
+<div class="brand-modal" id="brand-modal-{{ brand.brand_id }}" role="dialog" aria-modal="true"
+     aria-labelledby="brand-modal-title-{{ brand.brand_id }}" hidden>
+    <section class="brand-modal-card">
+        <div class="brand-modal-header">
+            <h2 id="brand-modal-title-{{ brand.brand_id }}">{{ brand.brand_name or 'Brand details' }}</h2>
+            <button class="brand-modal-close" type="button" aria-label="Close brand details">&times;</button>
+        </div>
+
+        <dl class="brand-details">
+            <div><dt>Brand ID</dt><dd>{{ brand.brand_id }}</dd></div>
+            <div><dt>CAC Registration Number</dt><dd>{{ brand.brand_regno or '—' }}</dd></div>
+            <div><dt>Email</dt><dd>{{ brand.brand_email or '—' }}</dd></div>
+            <div><dt>Phone</dt><dd>{{ brand.brand_phone or '—' }}</dd></div>
+            <div><dt>Logo</dt><dd>{{ brand_logos.get(brand.brand_id, '—') }}</dd></div>
+            <div class="brand-description"><dt>Description</dt><dd>{{ brand.brand_desc or '—' }}</dd></div>
+        </dl>
+
+        <form method="post" action="{{ url_for('admin.update_brand_status', brand_id=brand.brand_id) }}" class="brand-status-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="brand-status-{{ brand.brand_id }}">Status</label>
+            <select id="brand-status-{{ brand.brand_id }}" name="status" required>
+                {% for status in brand_statuses %}
+                    <option value="{{ status }}" {% if (brand.status or 'Pending') == status %}selected{% endif %}>{{ status }}</option>
+                {% endfor %}
+            </select>
+            <div class="brand-modal-actions">
+                <button class="brand-modal-cancel" type="button">Cancel</button>
+                <button class="btn-primary" type="submit">Save status</button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block script %}
+<style>
+    .brand-view-button { padding: 0.4rem 0.8rem; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; }
+    .badge-approved { background: #d1fae5; color: #065f46; }
+    .brand-modal,
+    .brand-modal[hidden] {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(17, 24, 39, 0.6);
+    }
+    .brand-modal[hidden] { display: none; }
+    .brand-modal-card {
+        width: min(100%, 560px);
+        max-height: min(90vh, 760px);
+        overflow-y: auto;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        background: #fff;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    }
+    .brand-modal-header,
+    .brand-modal-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .brand-modal-header h2 { color: #111827; font-size: 1.25rem; }
+    .brand-modal-close {
+        border: 0;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+        font-size: 1.75rem;
+        line-height: 1;
+    }
+    .brand-details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+    .brand-details dt { margin-bottom: 0.25rem; color: #6b7280; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .brand-details dd { margin: 0; overflow-wrap: anywhere; color: #111827; }
+    .brand-description { grid-column: 1 / -1; }
+    .brand-status-form { display: grid; gap: 0.6rem; }
+    .brand-status-form label { color: #374151; font-weight: 600; }
+    .brand-status-form select { padding: 0.65rem; border: 1px solid #d1d5db; border-radius: 0.4rem; background: white; }
+    .brand-modal-actions { justify-content: flex-end; margin-top: 0.5rem; }
+    .brand-modal-cancel { padding: 0.6rem 1rem; border: 1px solid #d1d5db; border-radius: 0.4rem; background: white; cursor: pointer; }
+    body.brand-modal-open { overflow: hidden; }
+    @media (max-width: 480px) {
+        .brand-modal-card { padding: 1rem; }
+        .brand-details { grid-template-columns: 1fr; }
+        .brand-description { grid-column: auto; }
+    }
+</style>
+<script>
+    (function () {
+        let activeModal = null;
+        let previousFocus = null;
+
+        function closeModal() {
+            if (!activeModal) return;
+            activeModal.hidden = true;
+            document.body.classList.remove('brand-modal-open');
+            activeModal = null;
+            if (previousFocus) previousFocus.focus();
+        }
+
+        document.querySelectorAll('.brand-view-button').forEach(function (button) {
+            button.addEventListener('click', function () {
+                activeModal = document.getElementById(button.dataset.modalTarget);
+                if (!activeModal) return;
+                previousFocus = button;
+                activeModal.hidden = false;
+                document.body.classList.add('brand-modal-open');
+                activeModal.querySelector('.brand-modal-close').focus();
+            });
+        });
+
+        document.querySelectorAll('.brand-modal').forEach(function (modal) {
+            modal.querySelectorAll('.brand-modal-close, .brand-modal-cancel').forEach(function (button) {
+                button.addEventListener('click', closeModal);
+            });
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) closeModal();
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') closeModal();
+        });
+    })();
+</script>
 {% endblock %}

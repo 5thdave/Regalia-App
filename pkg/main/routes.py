@@ -99,7 +99,7 @@ def index():
     featured_brands = (
         db.session.query(Brand, BrandLogo.logo)
         .join(BrandLogo, BrandLogo.brand_id == Brand.brand_id)
-        .filter(BrandLogo.logo.isnot(None), BrandLogo.logo != '')
+        .filter(Brand.status == 'Approved',BrandLogo.logo.isnot(None), BrandLogo.logo != '')
         .all()
     )
     user_id = session.get('useronline')
@@ -143,6 +143,14 @@ def newsletter_subscribe():
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
+    requested_login_type = (
+        request.form.get('login_type') if request.method == 'POST'
+        else request.args.get('type') or request.args.get('role')
+    )
+    selected_login_type = (
+        requested_login_type if requested_login_type in ('user', 'brand') else 'user'
+    )
+
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -160,7 +168,10 @@ def login():
             if user and check_password_hash(user.password, password):
                 if user.status != 'Active':
                     flash('This account is not active. Please contact support.', 'error')
-                    return render_template('main/login.html')
+                    return render_template(
+                        'main/login.html',
+                        selected_login_type=selected_login_type,
+                    )
                 session.clear()
                 session['useronline'] = user.id
                 
@@ -169,7 +180,10 @@ def login():
 
         flash('Invalid email or password.', 'error')
 
-    return render_template('main/login.html')
+    return render_template(
+        'main/login.html',
+        selected_login_type=selected_login_type,
+    )
 
 
 @main.route('/signup', methods=['GET', 'POST'])
@@ -297,7 +311,12 @@ def signup_lgas():
 
 @main.route('/shop')
 def shop():
-    brands = Brand.query.all()
+    featured_brands = (
+    db.session.query(Brand, BrandLogo.logo)
+    .join(BrandLogo, BrandLogo.brand_id == Brand.brand_id)
+    .filter(Brand.status == 'Approved', BrandLogo.logo.isnot(None), BrandLogo.logo != '')
+    .all()
+)
     logos = BrandLogo.query.all()
     brand_logos = {logo.brand_id: logo.logo for logo in logos}
     user_id = session.get('useronline')
@@ -315,7 +334,7 @@ def shop():
     )
     return render_template(
         'main/shop.html',
-        brands=brands,
+        brands=featured_brands,
         brand_logos=brand_logos,
         favorite_brand_ids=favorite_brand_ids,
         user=user,

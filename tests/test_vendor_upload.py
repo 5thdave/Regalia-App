@@ -8,7 +8,7 @@ os.environ['DATABASE_URL'] = 'sqlite://'
 os.environ['SECRET_KEY'] = 'vendor-upload-test-key'
 
 from pkg import app
-from pkg.models import Brand, Category, Color, Product, ProductImage, ProductVariant, Size, db
+from pkg.models import Brand, BrandLogo, Category, Color, Product, ProductImage, ProductVariant, Size, db
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -25,7 +25,11 @@ class VendorUploadTestCase(unittest.TestCase):
         db.create_all()
         self.client = app.test_client()
 
-        brand = Brand(brand_name='Test Brand', brand_email='vendor@example.com')
+        brand = Brand(
+            brand_name='Test Brand',
+            brand_email='vendor@example.com',
+            status='Approved',
+        )
         category = Category(category_name='Clothing')
         color = Color(color_name='Test Blue', hex_code='#123456')
         size = Size(size_code='M', size_name='Medium')
@@ -66,6 +70,51 @@ class VendorUploadTestCase(unittest.TestCase):
             data=data,
             content_type='multipart/form-data',
         )
+
+    def test_unapproved_brand_cannot_view_or_submit_product_upload(self):
+        brand = db.session.get(Brand, self.brand_id)
+        brand.status = 'Pending'
+        db.session.commit()
+
+        get_response = self.client.get('/vendor/upload')
+        post_response = self.post_upload(self.upload_form())
+
+        self.assertEqual(get_response.status_code, 302)
+        self.assertEqual(post_response.status_code, 302)
+        self.assertEqual(Product.query.count(), 0)
+        with self.client.session_transaction() as session:
+            self.assertEqual(session['_flashes'][-1][1],
+                             'Your brand must be approved before you can upload products.')
+
+    def test_vendor_profile_displays_basic_brand_details(self):
+        brand = db.session.get(Brand, self.brand_id)
+        brand.brand_regno = 'CAC-12345'
+        brand.brand_phone = '08012345678'
+        brand.brand_desc = 'Locally made fashion'
+        db.session.add(BrandLogo(brand_id=self.brand_id, logo='test-logo.png'))
+        db.session.commit()
+
+        response = self.client.get('/vendor/profile')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Test Brand', response.data)
+        self.assertIn(b'vendor@example.com', response.data)
+        self.assertIn(b'08012345678', response.data)
+        self.assertIn(b'CAC-12345', response.data)
+        self.assertIn(b'Locally made fashion', response.data)
+        self.assertIn(b'Approved', response.data)
+        self.assertIn(b'/static/media/brandlogos/test-logo.png', response.data)
+
+    def test_vendor_profile_clears_stale_brand_session(self):
+        with self.client.session_transaction() as session:
+            session['brandonline'] = 99999
+
+        response = self.client.get('/vendor/profile')
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers['Location'], '/login')
+        with self.client.session_transaction() as session:
+            self.assertNotIn('brandonline', session)
 
     def test_valid_upload_saves_product_variant_and_png(self):
         response = self.post_upload(self.upload_form(
