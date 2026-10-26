@@ -21,11 +21,15 @@ class User(db.Model):
     dateofbirth = db.Column(db.Date)
     phone = db.Column(db.String(45))
     country = db.Column(db.String(45))
+    state_id = db.Column(db.Integer, db.ForeignKey('state.state_id'))
+    lga_id = db.Column(db.Integer, db.ForeignKey('lga.lga_id'))
     address = db.Column(db.String(255))
     password = db.Column(db.String(255))
     time_created = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.Enum('Active', 'Inactive', 'Suspended', name='user_status_enum'),default="Active")
     # Relationships
+    state = db.relationship('State', foreign_keys=[state_id])
+    lga = db.relationship('Lga', foreign_keys=[lga_id])
     orders = db.relationship('Order', backref='user', lazy=True)
     payments = db.relationship('Payment', backref='user', lazy=True)
     reviews = db.relationship('Review', backref='user', lazy=True)
@@ -203,3 +207,25 @@ class NewsletterSubscriber(db.Model):
     subscriber_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(254), nullable=False, unique=True, index=True)
     subscribed_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+
+
+class State(db.Model):
+    __tablename__ = 'state'
+    state_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    state_name = db.Column(db.String(80), nullable=False, default='')
+
+    # Relationships
+    lgas = db.relationship('Lga', backref='state', lazy=True, cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f"<State {self.state_id}: {self.state_name}>"
+
+
+class Lga(db.Model):
+    __tablename__ = 'lga'
+    lga_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    state_id = db.Column(db.Integer, db.ForeignKey('state.state_id'), nullable=False, default=0)
+    lga_name = db.Column(db.String(50), nullable=False, default='')
+
+    def __repr__(self):
+        return f"<Lga {self.lga_id}: {self.lga_name} (State {self.state_id})>"

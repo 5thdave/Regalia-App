@@ -34,6 +34,25 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="state_id">State</label>
+                        <select id="state_id" name="state_id" required>
+                            <option value="">Select your state</option>
+                            {% for state in states %}
+                                <option value="{{ state.state_id }}" {% if request.form.get('state_id') == state.state_id|string %}selected{% endif %}>{{ state.state_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lga_id">Local Government Area</label>
+                        <select id="lga_id" name="lga_id" required disabled
+                                data-selected="{{ request.form.get('lga_id', '') }}"
+                                data-url="{{ url_for('main.signup_lgas') }}">
+                            <option value="">Select your state first</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="gender">Gender</label>
                         <select name="gender" id="gender">
                             <option value="">Select your gender</option>
@@ -58,5 +77,52 @@
                 <p class="switch">Already a member? <span><a href="{{ url_for('main.login') }}">Log in</a></span></p>
             </div>
         </main>
+        {% endblock %}
+
+        {% block script %}
+        <script>
+            (function () {
+                const stateSelect = document.getElementById('state_id');
+                const lgaSelect = document.getElementById('lga_id');
+                if (!stateSelect || !lgaSelect) return;
+
+                const loadLgas = async function (selectedLgaId) {
+                    const stateId = stateSelect.value;
+                    lgaSelect.replaceChildren(new Option(
+                        stateId ? 'Loading local government areas…' : 'Select your state first',
+                        ''
+                    ));
+                    lgaSelect.disabled = true;
+                    if (!stateId) return;
+
+                    try {
+                        const url = new URL(lgaSelect.dataset.url, window.location.origin);
+                        url.searchParams.set('state_id', stateId);
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error('Could not load local government areas.');
+                        const lgas = await response.json();
+                        lgaSelect.replaceChildren(new Option('Select your local government area', ''));
+                        lgas.forEach(function (lga) {
+                            const option = new Option(lga.name, lga.id);
+                            option.selected = String(lga.id) === String(selectedLgaId);
+                            lgaSelect.add(option);
+                        });
+                        lgaSelect.disabled = lgas.length === 0;
+                        if (lgas.length === 0) {
+                            lgaSelect.replaceChildren(new Option('No local government areas available', ''));
+                        }
+                    } catch (error) {
+                        lgaSelect.replaceChildren(new Option(error.message, ''));
+                    }
+                };
+
+                stateSelect.addEventListener('change', function () {
+                    loadLgas('');
+                });
+                if (stateSelect.value) {
+                    loadLgas(lgaSelect.dataset.selected);
+                }
+            })();
+        </script>
         {% endblock %}
      

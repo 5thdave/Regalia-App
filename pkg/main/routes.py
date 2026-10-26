@@ -1,8 +1,10 @@
 import re
+from smtplib import SMTPException
 from datetime import date
-
+from flask_mail import Message
 from flask import  Blueprint, abort, current_app, flash, jsonify, render_template, request, redirect,url_for,  session
 from sqlalchemy import and_, func, or_
+from pkg.extensions import mail
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from pkg.models import (
     db,
@@ -22,6 +24,8 @@ from pkg.models import (
     Order,
     OrderItem,
     Payment,
+    State,
+    Lga,
 )
 
 from sqlalchemy.orm import selectinload
@@ -176,11 +180,13 @@ def user_signup():
         gender = request.form.get('gender') or None
         dob_value = request.form.get('dob') or ''
         phone = (request.form.get('phone') or '').strip()
+        state_value = request.form.get('state_id') or ''
+        lga_value = request.form.get('lga_id') or ''
         address = (request.form.get('address') or '').strip()
         password = request.form.get('password') or ''
         confirmpass = request.form.get('confirmpassword') or ''
 
-        if not name or not email or not phone or not dob_value or not password:
+        if not name or not email or not phone or not dob_value or not password or not state_value or not lga_value:
             flash('Please complete all required fields.', 'error')
         elif gender not in (None, 'Male', 'Female', 'Other'):
             flash('Select a valid gender.', 'error')
@@ -196,29 +202,97 @@ def user_signup():
             except ValueError:
                 flash('Enter a valid date of birth.', 'error')
             else:
-                user = User(
-                    name=name,
-                    gender=gender,
-                    email=email,
-                    dateofbirth=dob,
-                    phone=phone,
-                    country='Nigeria',
-                    address=address or None,
-                    password=generate_password_hash(password),
-                )
-                db.session.add(user)
                 try:
-                    db.session.commit()
-                except IntegrityError:
-                    db.session.rollback()
-                    if User.query.filter_by(email=email).first() is None:
-                        raise
-                    flash('An account with that email already exists. Please log in.', 'error')
-                else:
-                    flash('Your account has been created. Please log in.', 'success')
-                    return redirect(url_for('main.login'))
+                    state_id = int(state_value)
+                    lga_id = int(lga_value)
+                except ValueError:
+                    flash('Select a valid state and local government area.', 'error')
+                    state_id = None
+                    lga_id = None
+                if state_id is not None and lga_id is not None:
+                    state = db.session.get(State, state_id)
+                    lga = db.session.get(Lga, lga_id)
+                    if state is None or lga is None or lga.state_id != state.state_id:
+                        flash('Select a valid state and local government area.', 'error')
+                    else:
+                        user = User(
+                            name=name,
+                            gender=gender,
+                            email=email,
+                            dateofbirth=dob,
+                            phone=phone,
+                            country='Nigeria',
+                            state_id=state.state_id,
+                            lga_id=lga.lga_id,
+                            address=address or None,
+                            password=generate_password_hash(password),
+                        )
+                        db.session.add(user)
+                        try:
+                            db.session.commit()
+                        except IntegrityError:
+                            db.session.rollback()
+                            user = User.query.filter_by(email=email).first()
+                            if user is None:
+                                raise
+                            flash('An account with that email already exists. Please log in.', 'error')
+                        else:
+                            sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+                            username = current_app.config.get('MAIL_USERNAME')
+                            password = current_app.config.get('MAIL_PASSWORD')
+                            if sender and username and password:
+                                message = Message(
+                                    subject='Welcome to Regalia',
+                                    sender=sender,
+                                    recipients=[user.email],
+                                    body=f'Welcome to Regalia, {user.name}. Your account has been created successfully.',
+                                )
+                                try:
+                                    mail.send(message)
+                                except (OSError, SMTPException):
+                                    current_app.logger.exception(
+                                        'Account was created, but its confirmation email could not be sent.'
+                                    )
+                                    flash(
+                                        'Your account was created, but we could not send the confirmation email. Please contact support.',
+                                        'error',
+                                    )
+                                else:
+                                    flash('Your account has been created. Please log in.', 'success')
+                            else:
+                                current_app.logger.error(
+                                    'Account confirmation email not sent because mail credentials are not configured.'
+                                )
+                                flash(
+                                    'Your account was created, but email delivery is not configured. Please contact support.',
+                                    'error',
+                                )
+                            return redirect(url_for('main.login'))
 
-    return render_template('main/signup.html')
+    states = State.query.order_by(State.state_name).all()
+    return render_template('main/signup.html', states=states)
+
+
+@main.get('/signup/lgas')
+def signup_lgas():
+    state_value = request.args.get('state_id', '')
+    try:
+        state_id = int(state_value)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Select a valid state.'}), 400
+
+    if db.session.get(State, state_id) is None:
+        return jsonify({'error': 'Select a valid state.'}), 404
+
+    lgas = (
+        Lga.query.filter_by(state_id=state_id)
+        .order_by(Lga.lga_name)
+        .all()
+    )
+    return jsonify([
+        {'id': lga.lga_id, 'name': lga.lga_name}
+        for lga in lgas
+    ])
 
 
 @main.route('/shop')

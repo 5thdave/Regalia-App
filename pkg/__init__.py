@@ -1,14 +1,11 @@
 from flask import Flask
 from pkg.config import DevelopmentConfig
+from pkg.extensions import csrf, mail
 from pkg.user.routes import user
 from pkg.vendor.routes import vendor
 from pkg.admin.routes import admin
 from pkg.main.routes import main
 from flask_migrate import Migrate
-from flask_wtf.csrf import CSRFProtect
-
-
-csrf = CSRFProtect()
 
 
 def create_app():   
@@ -32,6 +29,7 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app,db)
     csrf.init_app(app)
+    mail.init_app(app)
 
     with app.app_context():
         from pkg.seed import seed_defaults
