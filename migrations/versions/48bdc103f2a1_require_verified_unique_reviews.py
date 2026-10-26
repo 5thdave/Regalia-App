@@ -5,6 +5,7 @@ Revises: 6f2a9c1d4b70
 Create Date: 2026-10-24 02:04:00
 """
 from alembic import op
+import sqlalchemy as sa
 
 
 revision = '48bdc103f2a1'
@@ -71,13 +72,28 @@ def upgrade():
         )
         """
     )
-    with op.batch_alter_table('review') as batch_op:
-        batch_op.create_unique_constraint(
-            'uq_review_user_product',
-            ['user_id', 'product_id'],
-        )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_constraints = {
+        c.get('name') for c in inspector.get_unique_constraints('review')
+    }
+    existing_indexes = {
+        ix.get('name') for ix in inspector.get_indexes('review')
+    }
+    if 'uq_review_user_product' not in existing_constraints and 'uq_review_user_product' not in existing_indexes:
+        with op.batch_alter_table('review') as batch_op:
+            batch_op.create_unique_constraint(
+                'uq_review_user_product',
+                ['user_id', 'product_id'],
+            )
 
 
 def downgrade():
-    with op.batch_alter_table('review') as batch_op:
-        batch_op.drop_constraint('uq_review_user_product', type_='unique')
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_constraints = {
+        c.get('name') for c in inspector.get_unique_constraints('review')
+    }
+    if 'uq_review_user_product' in existing_constraints:
+        with op.batch_alter_table('review') as batch_op:
+            batch_op.drop_constraint('uq_review_user_product', type_='unique')

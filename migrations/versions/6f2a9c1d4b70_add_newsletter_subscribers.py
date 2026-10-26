@@ -15,29 +15,47 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
-        'newsletter_subscribers',
-        sa.Column('subscriber_id', sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column('email', sa.String(length=254), nullable=False),
-        sa.Column(
-            'subscribed_at',
-            sa.DateTime(),
-            server_default=sa.func.now(),
-            nullable=False,
-        ),
-        sa.PrimaryKeyConstraint('subscriber_id'),
-    )
-    op.create_index(
-        'ix_newsletter_subscribers_email',
-        'newsletter_subscribers',
-        ['email'],
-        unique=True,
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    if not inspector.has_table('newsletter_subscribers'):
+        op.create_table(
+            'newsletter_subscribers',
+            sa.Column('subscriber_id', sa.Integer(), autoincrement=True, nullable=False),
+            sa.Column('email', sa.String(length=254), nullable=False),
+            sa.Column(
+                'subscribed_at',
+                sa.DateTime(),
+                server_default=sa.func.now(),
+                nullable=False,
+            ),
+            sa.PrimaryKeyConstraint('subscriber_id'),
+        )
+        op.create_index(
+            'ix_newsletter_subscribers_email',
+            'newsletter_subscribers',
+            ['email'],
+            unique=True,
+        )
+    else:
+        indexes = {ix['name'] for ix in inspector.get_indexes('newsletter_subscribers')}
+        if 'ix_newsletter_subscribers_email' not in indexes:
+            op.create_index(
+                'ix_newsletter_subscribers_email',
+                'newsletter_subscribers',
+                ['email'],
+                unique=True,
+            )
 
 
 def downgrade():
-    op.drop_index(
-        'ix_newsletter_subscribers_email',
-        table_name='newsletter_subscribers',
-    )
-    op.drop_table('newsletter_subscribers')
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if inspector.has_table('newsletter_subscribers'):
+        indexes = {ix['name'] for ix in inspector.get_indexes('newsletter_subscribers')}
+        if 'ix_newsletter_subscribers_email' in indexes:
+            op.drop_index(
+                'ix_newsletter_subscribers_email',
+                table_name='newsletter_subscribers',
+            )
+        op.drop_table('newsletter_subscribers')

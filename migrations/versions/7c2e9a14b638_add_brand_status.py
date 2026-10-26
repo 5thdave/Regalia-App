@@ -14,16 +14,24 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column(
-        'brand',
-        sa.Column(
-            'status',
-            sa.String(length=20),
-            nullable=False,
-            server_default='Pending',
-        ),
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    brand_columns = {column['name'] for column in inspector.get_columns('brand')}
+    if 'status' not in brand_columns:
+        op.add_column(
+            'brand',
+            sa.Column(
+                'status',
+                sa.String(length=20),
+                nullable=False,
+                server_default='Pending',
+            ),
+        )
 
 
 def downgrade():
-    op.drop_column('brand', 'status')
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    brand_columns = {column['name'] for column in inspector.get_columns('brand')}
+    if 'status' in brand_columns:
+        op.drop_column('brand', 'status')
