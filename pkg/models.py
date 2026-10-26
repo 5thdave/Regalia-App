@@ -40,6 +40,7 @@ class User(db.Model):
 class Brand(db.Model):
     __tablename__ = 'brand'
     brand_id = db.Column(db.Integer, primary_key=True,autoincrement=True)
+    brand_regno = db.Column(db.String(100), unique=True, nullable=True)
     brand_name = db.Column(db.String(100))
     brand_email = db.Column(db.String(100), unique=True)
     brand_phone = db.Column(db.String(45))

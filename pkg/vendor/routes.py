@@ -1,6 +1,10 @@
 import os
 import re
 import secrets
+from html import escape
+from smtplib import SMTPException
+from flask_mail import Message
+from pkg.extensions import mail
 from decimal import Decimal, InvalidOperation
 from flask import (
     Blueprint,
@@ -99,9 +103,10 @@ def handle_database_error(error):
 @vendor.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
+        name = (request.form.get('name') or '').strip()
+        email = (request.form.get('email') or '').strip().lower()
+        phone = (request.form.get('phone') or '').strip()
+        regno = (request.form.get('regno') or '').strip()
         password = request.form.get('password')
         confirmpassword = request.form.get('confirmpassword')
         desc = request.form.get('description')
@@ -109,9 +114,14 @@ def register():
         upload_folder = os.path.join(current_app.root_path, 'static', 'media', 'brandlogos')
         os.makedirs(upload_folder, exist_ok=True)
 
-        if password and password == confirmpassword and uploaded_file and uploaded_file.filename != '':
+        if not regno:
+            flash("Please enter your CAC registration number.", "error")
+        elif Brand.query.filter_by(brand_regno=regno).first():
+            flash("That CAC registration number is already registered.", "error")
+        elif password and password == confirmpassword and uploaded_file and uploaded_file.filename != '':
             password_hash = generate_password_hash(password)
             brand = Brand(
+                brand_regno=regno,
                 brand_name=name,
                 brand_email=email,
                 brand_phone=phone,
@@ -128,7 +138,75 @@ def register():
             logo = BrandLogo(brand_id=brand.brand_id, logo=unique_filename)
             db.session.add(logo)
             db.session.commit()
-            flash("Your brand has been registered. Please log in.", "success")
+
+            sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+            username = current_app.config.get('MAIL_USERNAME')
+            password = current_app.config.get('MAIL_PASSWORD')
+            if sender and username and password:
+                brand_name_html = escape(brand.brand_name or 'Brand')
+                sender_html = escape(sender)
+                message = Message(
+                    subject='Welcome to Regalia',
+                    sender=sender,
+                    recipients=[email],
+                    body= f"""Hi {brand.brand_name} Team,
+
+                        Thank you for registering on Regalia. We've received your brand's details and your application is now under review.
+
+                        What happens next:
+                        1. Our team will review your brand information.
+                        2. You will get a confirmation mail once your brand is approved to sell on this platform.
+
+                        Please hold on while we complete the approval process. You won't be able to list or sell products until your brand has been approved.
+
+                        If you have any questions in the meantime, reach us at fayosedavid20@gmail.com.
+
+                        Thank you for your patience,
+                        The Ragalia Team
+                        """
+                        ,
+                    html= f"""
+                        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: auto; color: #333;">
+                        <h2 style="color: #2c5282;">Thanks for registering, {brand_name_html}!</h2>
+                        <p>We've received your brand's details and your application is now <strong>under review</strong>.</p>
+
+                        <div style="background: #f7fafc; border-left: 4px solid #2c5282; padding: 12px 16px; margin: 20px 0;">
+                            <strong>What happens next?</strong><br>
+                            You will get a confirmation mail once your brand is approved to sell on this platform.
+                        </div>
+
+                        <p>Please hold on while we complete the approval process. You won't be able to list or sell products until your brand has been approved.</p>
+
+                        <p style="font-size: 13px; color: #666;">
+                            Questions? Contact us at <a href="mailto:{sender_html}">{sender_html}</a>.
+                        </p>
+
+                        <p>Thank you for your patience,<br>The Regalia Team</p>
+                        </div>
+                        """
+
+                )
+                try:
+                    mail.send(message)
+                except (OSError, SMTPException):
+                    current_app.logger.exception(
+                        'Account was created, but its confirmation email could not be sent.'
+                    )
+                    flash(
+                        'Your account was created, but we could not send the confirmation email. Please contact support.',
+                        'error',
+                    )
+                else:
+                    flash('Your account has been created. Please log in.', 'success')
+            else:
+                current_app.logger.error(
+                    'Account confirmation email not sent because mail credentials are not configured.'
+                )
+                flash(
+                    'Your account was created, but email delivery is not configured. Please contact support.',
+                    'error',
+                )
+            return redirect(url_for('main.login'))
         elif password != confirmpassword:
             flash("The passwords do not match.", "error")
         elif not uploaded_file or not uploaded_file.filename:
